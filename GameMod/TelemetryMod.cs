@@ -77,6 +77,8 @@ namespace GameMod
         {
             private static void Postfix()
             {
+                if (!telemetry_enabled)
+                    return;
                 if (!initialized & GameManager.m_local_player != null)
                 {
                     initialized = true;
