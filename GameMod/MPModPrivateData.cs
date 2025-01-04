@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -1277,6 +1277,12 @@ END_ENTRY
             set { MPAudioTaunts.AServer.server_supports_audiotaunts = value; }
         }
 
+        public static int LoadoutFilterBitmask
+        {
+            get { return MPLoadouts.LoadoutFilterBitmask; }
+            set { MPLoadouts.LoadoutFilterBitmask = value; }
+        }
+      
         public static bool ClientPhysics
         {
             get { return MPServerOptimization.enabled; }
@@ -1314,6 +1320,7 @@ END_ENTRY
             jobject["thunderboltpassthrough"] = ThunderboltPassthrough;
             jobject["damagenumbers"] = DamageNumbers;
             jobject["audiotauntsupport"] = AudioTauntsSupported;
+            jobject["loadoutfilter"] = (int)LoadoutFilterBitmask;
             jobject["clientphysics"] = ClientPhysics;
             return jobject;
         }
@@ -1348,6 +1355,7 @@ END_ENTRY
             ThunderboltPassthrough = root["thunderboltpassthrough"].GetBool(false);
             DamageNumbers = root["damagenumbers"].GetBool(false);
             AudioTauntsSupported = root["audiotauntsupport"].GetBool(false);
+            LoadoutFilterBitmask = root["loadoutfilter"].GetInt(MPLoadouts.MASK_DEFAULT);
             ClientPhysics = root["clientphysics"].GetBool(false);
         }
 
@@ -1643,6 +1651,7 @@ END_ENTRY
             MPModPrivateData.ShipMeshCollider = Menus.mms_collision_mesh;
             MPModPrivateData.ColliderScale = MPColliderSwap.colliderScale;
             MPModPrivateData.ThunderboltPassthrough = MPThunderboltPassthrough.isAllowed;
+            MPModPrivateData.LoadoutFilterBitmask = MPLoadouts.LoadoutFilterBitmask;
             MPModPrivateData.ClientPhysics = MPServerOptimization.prefEnabled;
             if (Menus.mms_mp_projdata_fn == "STOCK") {
                 MPModPrivateData.CustomProjdata = string.Empty;

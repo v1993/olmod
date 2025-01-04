@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Overload;
@@ -67,6 +67,7 @@ namespace GameMod
                 teamCount = MPTeams.MenuManagerTeamCount,
                 shipMeshCollider = Menus.mms_collision_mesh,
                 thunderboltPassthrough = MPThunderboltPassthrough.isAllowed,
+                loadoutFilterBitmask = MPLoadouts.LoadoutFilterBitmask,
                 serverOptimizations = MPServerOptimization.prefEnabled
             });
 
@@ -109,6 +110,7 @@ namespace GameMod
                 teamCount = 2,
                 shipMeshCollider = 0,
                 thunderboltPassthrough = false,
+                loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
                 serverOptimizations = true
             });
 
@@ -151,6 +153,7 @@ namespace GameMod
                 shipMeshCollider = 0,
                 damageNumbers = true,
                 thunderboltPassthrough = false,
+                loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
                 serverOptimizations = true
             });
 
@@ -197,6 +200,7 @@ namespace GameMod
             public int shipMeshCollider = 0;
             public float colliderScale = 1f;
             public bool thunderboltPassthrough;
+            public int loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT;
             public bool serverOptimizations = true;
 
             public void Apply()
@@ -245,6 +249,7 @@ namespace GameMod
                 Menus.mms_collision_mesh = this.shipMeshCollider;
                 MPColliderSwap.colliderScale = this.colliderScale;
                 MPThunderboltPassthrough.isAllowed = this.thunderboltPassthrough;
+                MPLoadouts.LoadoutFilterBitmask = this.loadoutFilterBitmask;
                 MPServerOptimization.prefEnabled = this.serverOptimizations;
             }
         }

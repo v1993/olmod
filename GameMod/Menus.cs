@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -361,6 +361,23 @@ namespace GameMod {
             position.y += 62f;
         }
 
+        private static void DrawLoadoutRestrictionOptions(UIElement uie, ref Vector2 position)
+        {
+            position.y += 12f;
+            uie.SelectAndDrawItem("ALLOWED LOADOUT WEAPONS", position, 23, false, 1f, 0.75f);
+            position.y += 62f;           
+            uie.SelectAndDrawItem("ALLOWED MODIFIERS", position, 8, false, 1f, 0.75f);
+            position.y += 31f;
+            uie.DrawMenuSeparator(position);
+            position.y += 31f;
+        }
+
+
+        private static void DrawBacklinkButtonInPowerupMenu(UIElement uie)
+        {
+            uie.SelectAndDrawHalfItem2("ALLOWED LOADOUTS", new Vector2(-473f, 214), 30, false);
+        }
+
         private static void ResetCenter(UIElement uie, ref Vector2 position)
         {
             position.x += 300f;
@@ -369,8 +386,11 @@ namespace GameMod {
         [HarmonyPriority(Priority.Normal - 9)] // set global order of transpilers for this function
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes)
         {
-            int state = 0;
+            MethodInfo targetMethod = AccessTools.Method(typeof(UIElement), "DrawMenuSeparator", new[] { typeof(Vector2) });
 
+            int state = 0;
+            int loadout_specific_state = 0; // this is used to find the place where to add the loadout menu
+            int loadout_powerup_menulink_button_state = 0; // this is used to find the entrypoint to the original powerup menu to insert a button that links back to the new loadout menu
             foreach (var code in codes)
             {
                 // Adjust x position
@@ -411,6 +431,50 @@ namespace GameMod {
                     yield return code;
                     continue;
                 }
+
+                // FOR MpLoadouts:
+                // Skip the state till we are at the second occurence of "LOADOUT SETTINGS"
+                if (loadout_specific_state <= 1 && code.opcode == OpCodes.Ldstr && (string)code.operand == "LOADOUT SETTINGS")
+                {
+                    loadout_specific_state++;
+                    yield return code;
+                    continue;
+                }
+
+                // FOR MpLoadouts:
+                // Changes the spacing of the menu to make room for the loadout/modifier menu buttons
+                if (loadout_specific_state == 2 && code.opcode == OpCodes.Ldc_R4)
+                {
+                    if( (float)code.operand == 186f )
+                        code.operand = 270f;
+                    if( (float)code.operand == 40f)
+                        code.operand = 19f;
+                }
+
+                // FOR MpLoadouts:
+                // Adds the restricted loadout/modifier menu buttons
+                if (loadout_specific_state == 2 && code.opcode == OpCodes.Call &&  code.operand is MethodInfo method && method == targetMethod)
+                {
+                    loadout_specific_state = 3;
+                    yield return code;
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldloca, 0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Menus_UIElement_DrawMpMatchSetup), "DrawLoadoutRestrictionOptions"));
+                    continue;
+                }
+
+                // look for the second appearance of "ALLOWED POWERUPS" to add the loadout menu button in the powerup menu. this would not work if this patch was not always the first to execute
+                if( code.opcode == OpCodes.Ldstr && (string)code.operand == "ALLOWED POWERUPS")
+                    loadout_powerup_menulink_button_state++;   
+                if(loadout_powerup_menulink_button_state == 2 && code.opcode == OpCodes.Ldc_R4 && (float)code.operand == 80.6f)
+                {
+                    loadout_powerup_menulink_button_state++;
+                    yield return code;
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Menus_UIElement_DrawMpMatchSetup), "DrawBacklinkButtonInPowerupMenu"));
+                    continue;
+                }
+
                 if (state == 3 && code.opcode == OpCodes.Call && code.operand == AccessTools.Method(typeof(UIElement), "SelectAndDrawItem"))
                 {
                     state = 4;
