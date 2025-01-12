@@ -195,7 +195,7 @@ namespace GameMod {
                     var last_snapshot = last_snapshots.m_snapshots.FirstOrDefault(m => m.m_net_id == snapshot.m_net_id);
                     if (last_snapshot != null) {
                         snapshot.m_vel = (snapshot.m_pos - last_snapshot.m_pos) / Time.fixedDeltaTime;
-                        snapshot.m_vrot = (Quaternion.Inverse(snapshot.m_rot) * Quaternion.SlerpUnclamped(last_snapshot.m_rot, snapshot.m_rot, 1f / Time.fixedDeltaTime)).eulerAngles;
+                        snapshot.m_vrot = (Quaternion.Inverse(snapshot.m_rot) * Quaternion.SlerpUnclamped(last_snapshot.m_rot, snapshot.m_rot, 1f / Time.fixedDeltaTime)).eulerAngles * Mathf.Deg2Rad; // Unity is expecting angular velocity to be in radians, not degrees
                     }
                 }
             }
@@ -508,7 +508,7 @@ namespace GameMod {
             if (Menus.mms_lag_compensation_prediction_mode == 2) // Motion Arc mode
             {
                 Vector3 rotPos = Vector3.LerpUnclamped(snapshot.m_pos, snapshot.m_pos + ((snapshot.m_rot * Quaternion.Inverse(newRot)) * snapshot.m_vel), t);
-                newPos = Vector3.Lerp(newPos, rotPos, 0.5f); // some semblance of faking inertia -- only go ~1/2 of the way to the rotated position vector. This could probably use tuning.
+                newPos = Vector3.Lerp(newPos, rotPos, 0.34f); // some semblance of faking inertia -- only go ~1/3 of the way to the rotated position vector. This could probably use tuning. -- 1/2 looked good but mis-predicted, trying 1/3
             }
 
             // limit ship dive-in if enabled:

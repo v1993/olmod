@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Overload;
@@ -68,7 +68,8 @@ namespace GameMod
                 shipMeshCollider = Menus.mms_collision_mesh,
                 thunderboltPassthrough = MPThunderboltPassthrough.isAllowed,
                 loadoutFilterBitmask = MPLoadouts.LoadoutFilterBitmask,
-                serverOptimizations = MPServerOptimization.prefEnabled
+                serverOptimizations = MPServerOptimization.prefEnabled,
+                inputBufferLength = MPServerOptimization.InputBufferLength // CCF-TEMPORARY
             });
 
             presets.Add(new MPMatchPreset
@@ -111,7 +112,8 @@ namespace GameMod
                 shipMeshCollider = 0,
                 thunderboltPassthrough = false,
                 loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
-                serverOptimizations = true
+                serverOptimizations = true,
+                inputBufferLength = 2 // CCF-TEMPORARY
             });
 
             presets.Add(new MPMatchPreset
@@ -154,8 +156,9 @@ namespace GameMod
                 damageNumbers = true,
                 thunderboltPassthrough = false,
                 loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
-                serverOptimizations = true
-            });
+                serverOptimizations = true,
+                inputBufferLength = 2 // CCF-TEMPORARY
+        });
 
             GameManager.m_gm.StartCoroutine(GetMatchPresets());
         }        
@@ -202,6 +205,7 @@ namespace GameMod
             public bool thunderboltPassthrough;
             public int loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT;
             public bool serverOptimizations = true;
+            public int inputBufferLength = 2; // CCF-TEMPORARY
 
             public void Apply()
             {
@@ -251,6 +255,7 @@ namespace GameMod
                 MPThunderboltPassthrough.isAllowed = this.thunderboltPassthrough;
                 MPLoadouts.LoadoutFilterBitmask = this.loadoutFilterBitmask;
                 MPServerOptimization.prefEnabled = this.serverOptimizations;
+                MPServerOptimization.InputBufferLength = this.inputBufferLength; // CCF-TEMPORARY
             }
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -317,11 +317,14 @@ namespace GameMod {
             position.x += 600f;
             position.y = col_top - 250f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALLOW REAR VIEW CAMERA"), position, 11, Menus.GetMMSRearViewPIP(), Loc.LS("CLIENTS CAN CHOOSE TO HAVE REAR VIEW"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALWAYS CLOAKED"), position, 15, Menus.GetMMSAlwaysCloaked(), Loc.LS("SHIPS ARE ALWAYS CLOAKED"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("CLASSIC SPAWNS"), position, 13, Menus.GetMMSClassicSpawns(), Loc.LS("SPAWN WITH IMPULSE+ DUALS AND FALCONS"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
 
             if (MenuManager.mms_mode == ExtMatchMode.CTF)
             {
@@ -332,19 +335,26 @@ namespace GameMod {
                 uie.SelectAndDrawStringOptionItem(Loc.LS("ASSISTS"), position, 18, Menus.GetMMSAssistScoring(), Loc.LS("AWARD POINTS FOR ASSISTING WITH KILLS"), 1f, false);
             }
 
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("PROJECTILE DATA"), position, 16, Menus.mms_mp_projdata_fn == "STOCK" ? "STOCK" : System.IO.Path.GetFileName(Menus.mms_mp_projdata_fn), string.Empty, 1f, false);
-            position.y += 55f;
-
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALLOW SMASH ATTACK"), position, 17, Menus.GetMMSAllowSmash(), Loc.LS("ALLOWS PLAYERS TO USE THE SMASH ATTACK"), 1f, false);
-            position.y += 55f;
-
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("TB PENETRATION"), position, 20, MPThunderboltPassthrough.isAllowed ? "ON" : "OFF", Loc.LS("ALLOWS THUNDERBOLT SHOTS TO PENETRATE SHIPS"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("DAMAGE NUMBERS"), position, 21, Menus.GetMMSDamageNumbers(), Loc.LS("SHOWS THE DAMAGE YOU DO TO OTHER SHIPS"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("CLIENT-SIDE PHYSICS"), position, 23, MPServerOptimization.prefEnabled ? "ENABLED" : "DISABLED", Loc.LS("ALLOWS CLIENTS TO PASS PRE-PROCESSED PHYSICS RATHER THAN RESIMULATING INPUTS ON THE SERVER"), 1f, false);
-            position.y += 55f;
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
+            uie.SelectAndDrawStringOptionItem(Loc.LS("SERVER INPUT BUFFER LENGTH"), position, 24, MPServerOptimization.InputBufferLength.ToString(), Loc.LS("NUMBER OF FRAMES TO BUFFER BEFORE SERVER PROCESSES INPUT IT HAS RECEIVED (OVERLOAD STOCK IS 3, TESTING VERSION IS 2)"), 1f, false); // CCF-TEMPORARY
+            //position.y += 55f;
+            position.y += 50f; // CCF-TEMPORARY
             uie.SelectAndDrawStringOptionItem(Loc.LS("COLLISION MESH"), position, 22, Menus.GetMMSCollisionMesh(), Loc.LS("COLLIDER TO USE FOR PROJECTILE->SHIP COLLISIONS"), 1f, false);
         }
 
@@ -365,7 +375,7 @@ namespace GameMod {
         {
             position.y += 12f;
             uie.SelectAndDrawItem("ALLOWED LOADOUT WEAPONS", position, 23, false, 1f, 0.75f);
-            position.y += 62f;           
+            position.y += 62f;
             uie.SelectAndDrawItem("ALLOWED MODIFIERS", position, 8, false, 1f, 0.75f);
             position.y += 31f;
             uie.DrawMenuSeparator(position);
@@ -674,6 +684,10 @@ namespace GameMod {
                         break;
                     case 23:
                         MPServerOptimization.prefEnabled = !MPServerOptimization.prefEnabled;
+                        MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
+                        break;
+                    case 24: // CCF-TEMPORARY
+                        MPServerOptimization.InputBufferLength = ((3 + MPServerOptimization.InputBufferLength + UIManager.m_select_dir) % 4) + 1;
                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                         break;
                 }

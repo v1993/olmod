@@ -67,6 +67,7 @@ namespace GameMod
 
 		public static int InputBufferLength = 2; // 3 ticks is stock (50ms), 2 seems universally smooth (33ms), 1 feels great but is very network-sensitive (16.7ms) -- sticking with 2 ticks for now
 		public static float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
+		public static int MissedFramesThreshold = 5; // threshold for number of missed frames for a player before they are forced to skip a frame to allow the buffer to refill
 
 		public static bool ODTurning = true; // allows OD to boost turning speed if true
 		public static bool RollFix = false; // allows roll speed to be unaffected by mouse movement if true
@@ -484,11 +485,38 @@ namespace GameMod
 		[HarmonyPatch(typeof(Server), "ProcessCachedControlsRemote")]
 		public static class MPServerOptimization_ProcessCachedControlsRemote
 		{
-			public static void Prefix(Player player)
+			public static bool Prefix(Player player)
             {
 				player.m_send_updated_state = false; // reset this at the start of the method instead of later in the process
-            }
 
+				if (player.m_InputToProcessOnServer.Count >= InputBufferLength)
+				{
+					player.m_server_input_primed = true;
+				}
+				if (player.m_InputToProcessOnServer.Count > 0 && player.m_server_input_primed && player.m_input_deficit < MissedFramesThreshold)
+				{
+					PlayerEncodedInputWithTick playerEncodedInputWithTick = player.m_InputToProcessOnServer.Dequeue();
+					player.m_updated_state.m_tick = playerEncodedInputWithTick.m_tick;
+					player.m_send_updated_state = true;
+					player.ApplyFixedUpdateInputMessage(playerEncodedInputWithTick.m_input);
+					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_WEAPON);
+					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_MISSILE);
+					player.c_player_ship.FixedUpdateProcessControls();
+				}
+				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead) // input was missing for this frame
+				{
+					player.PauseRigidBody();
+					player.m_input_deficit = Mathf.Clamp(++player.m_input_deficit, 0, 60); // reusing this to track missing frames so we can skip when needed to let the buffer refill
+					Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping frame to allow buffer catch-up==");
+
+				}
+				player.ProcessRemotePlayerFiringControlsPost();
+
+				return false;
+			}
+
+			// just going to prefix it -- not worth it
+			/* 
 			public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes)
 			{
 				foreach (var code in codes)
@@ -501,6 +529,7 @@ namespace GameMod
 					yield return code;
 				}
 			}
+			*/
 		}
 
 		// Replaces AccelerateInputs completely to change the input buffer length on the server to lower movement latency -- also inserts some missing calls from ProcessCachedControlsRemote that should have been included here as well
@@ -516,9 +545,9 @@ namespace GameMod
 				{
 					if (player != null && !player.m_spectator)
 					{
-						player.m_input_deficit = 60; // moved from MPClientExtrapolation
+						//player.m_input_deficit = 60; // moved from MPClientExtrapolation, but the value is being used now to track if we've missed too many frames and need to skip one to let the buffer refill
 
-						if (player.m_InputToProcessOnServer.Count > InputBufferLength) // controls how far to "catch up" to keep the buffer size low
+						if (player.m_InputToProcessOnServer.Count > InputBufferLength && player.m_input_deficit < MissedFramesThreshold) // controls how far to "catch up" to keep the buffer size low
 						{
 							player.m_num_inputs_to_accelerate = Mathf.Max(1, Mathf.FloorToInt((float)player.m_InputToProcessOnServer.Count * CatchUpFactor));
 						}
@@ -528,10 +557,12 @@ namespace GameMod
 						}
 						if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead)
 						{
-							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, player.m_input_deficit);
+							//player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, player.m_input_deficit);
+							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, 60); // was hardcoded to 60 above anyways
 						}
-						player.m_input_deficit -= player.m_num_inputs_to_accelerate;
-						player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
+						//player.m_input_deficit -= player.m_num_inputs_to_accelerate;
+						//player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
+						player.m_input_deficit = 0;
 						if (player.m_num_inputs_to_accelerate > num)
 						{
 							num = player.m_num_inputs_to_accelerate;
