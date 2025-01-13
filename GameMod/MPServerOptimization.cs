@@ -69,6 +69,8 @@ namespace GameMod
 		public static float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
 		public static int MissedFramesThreshold = 5; // threshold for number of missed frames for a player before they are forced to skip a frame to allow the buffer to refill
 
+		public static Dictionary<NetworkInstanceId, int> playerRespawnDelay = new Dictionary<NetworkInstanceId, int>(16); // wait 60 ticks after a respawn before allowing interpolation if frames to let the first few player states to get through
+
 		public static bool ODTurning = true; // allows OD to boost turning speed if true
 		public static bool RollFix = false; // allows roll speed to be unaffected by mouse movement if true
 
@@ -493,6 +495,16 @@ namespace GameMod
 				{
 					player.m_server_input_primed = true;
 				}
+
+				int spawndelay;
+				playerRespawnDelay.TryGetValue(player.netId, out spawndelay);
+
+				if (!player.m_server_input_primed || player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0 || NetworkMatch.m_match_state == MatchState.POSTGAME) // set a delay if dead/respawning/round done and hold it at 30 while in that state
+				{
+					spawndelay = 30;
+					playerRespawnDelay[player.netId] = spawndelay;
+				} // decremented in SendSnapshotsToPlayers in MPNoPositionCompression
+
 				if (player.m_InputToProcessOnServer.Count > 0 && player.m_server_input_primed && player.m_input_deficit < MissedFramesThreshold)
 				{
 					PlayerEncodedInputWithTick playerEncodedInputWithTick = player.m_InputToProcessOnServer.Dequeue();
@@ -503,11 +515,15 @@ namespace GameMod
 					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_MISSILE);
 					player.c_player_ship.FixedUpdateProcessControls();
 				}
-				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead) // input was missing for this frame
+				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead && player.m_server_tick > 0) // input was missing for this frame
 				{
 					player.PauseRigidBody();
 					player.m_input_deficit = Mathf.Clamp(++player.m_input_deficit, 0, 60); // reusing this to track missing frames so we can skip when needed to let the buffer refill
-					Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping frame to allow buffer catch-up==");
+
+					if (spawndelay == 0 && player.m_input_deficit >= MissedFramesThreshold)
+					{
+						Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping frame to allow buffer catch-up==");
+					}
 
 				}
 				player.ProcessRemotePlayerFiringControlsPost();
@@ -562,7 +578,10 @@ namespace GameMod
 						}
 						//player.m_input_deficit -= player.m_num_inputs_to_accelerate;
 						//player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
-						player.m_input_deficit = 0;
+						if (player.m_input_deficit >= MissedFramesThreshold)
+						{
+							player.m_input_deficit = 0; // if this triggers, we will have just skipped a frame in ProcessCachedControlsRemote so we need to reset the count
+						}
 						if (player.m_num_inputs_to_accelerate > num)
 						{
 							num = player.m_num_inputs_to_accelerate;
