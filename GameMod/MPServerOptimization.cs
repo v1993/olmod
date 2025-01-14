@@ -515,14 +515,14 @@ namespace GameMod
 					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_MISSILE);
 					player.c_player_ship.FixedUpdateProcessControls();
 				}
-				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead && player.m_server_tick > 0) // input was missing for this frame
+				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead && player.m_server_tick > 0) // input was missing for this frame OR we're at the skip threshold
 				{
 					player.PauseRigidBody();
 					player.m_input_deficit = Mathf.Clamp(++player.m_input_deficit, 0, 60); // reusing this to track missing frames so we can skip when needed to let the buffer refill
 
-					if (spawndelay == 0 && player.m_input_deficit >= MissedFramesThreshold)
+					if (spawndelay == 0 && player.m_input_deficit > MissedFramesThreshold)
 					{
-						Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping frame to allow buffer catch-up==");
+						Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping this frame intentionally to allow buffer catch-up==");
 					}
 
 				}
@@ -574,11 +574,11 @@ namespace GameMod
 						if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead)
 						{
 							//player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, player.m_input_deficit);
-							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, 60); // was hardcoded to 60 above anyways
+							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, 60); // was hardcoded to 60 at the top of the method anyways, and we can reuse the field
 						}
 						//player.m_input_deficit -= player.m_num_inputs_to_accelerate;
 						//player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
-						if (player.m_input_deficit >= MissedFramesThreshold)
+						if (player.m_input_deficit > MissedFramesThreshold) // Once we hit threshold, hold one more frame before resetting (which will get skipped intentionally)
 						{
 							player.m_input_deficit = 0; // if this triggers, we will have just skipped a frame in ProcessCachedControlsRemote so we need to reset the count
 						}
