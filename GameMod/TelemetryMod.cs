@@ -103,7 +103,8 @@ namespace GameMod
                         Vector3 gforce = (cRigidbody.velocity - previousVelocity) / Time.fixedDeltaTime / 9.81f;
                         previousVelocity = cRigidbody.velocity;
 
-                        var pyr = ToPitchYawRoll(rotation);
+                        //var pyr = ToPitchYawRoll(rotation);
+                        var pyr = GetPitchYawRoll(cRigidbody.transform);
 
                         Telemetry.Telemetry_SendTelemetry( 
                             pyr,                            
@@ -131,16 +132,26 @@ namespace GameMod
         }
 
         
-        public static Vector3 ToPitchYawRoll(Quaternion q)
-        {
-            var yaw = (float)Math.Atan2(2 * (q.y * q.w - q.x * q.z), 1 - 2 * (q.y * q.y + q.z * q.z)) * Rad2Degf;
-            var pitch = (float)Math.Atan2(2 * (q.x * q.w - q.y * q.z), 1 - 2 * (q.x * q.x + q.z * q.z)) * Rad2Degf;
-            var roll = (float)Math.Asin(2 * (q.x * q.y + q.z * q.w)) * Rad2Degf;
+        
 
-            return new Vector3(pitch, yaw, -roll);
+        public static Vector3 GetPitchYawRoll(Transform transform)
+        {
+            var data = new Vector3();
+
+            float pitchAngle = Vector3.Angle(new Vector3(transform.forward.x, 0, transform.forward.z), transform.forward);
+
+            float rollAngle = Vector3.Angle(new Vector3(transform.right.x, 0, transform.right.z), transform.right);
+
+            var yawAngle = Vector3.Angle(Vector3.ProjectOnPlane(transform.forward, Vector3.up), Vector3.forward);
+
+            data.y = yawAngle * Mathf.Sign(transform.forward.x);
+            data.x = -1f * Math.Sign(transform.forward.y) * pitchAngle;
+            data.z = Math.Sign(transform.right.y) * rollAngle;
+
+            return data;
         }
-        
-        
+
+
         private class PlayerData
         {
             /// <summary>
@@ -293,6 +304,8 @@ namespace GameMod
                     data = null;
                 }
             }
+
+            
         }
     }
 }
