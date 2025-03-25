@@ -3,6 +3,7 @@ using Overload;
 using Rewired;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace GameMod
 {
@@ -769,6 +771,79 @@ namespace GameMod
                 Debug.LogFormat("ControllerNameRemapper: mapping '{0}' -> '{1}'", origName, newName);
                 field_m_name.SetValue(__instance, newName);
             }
+        }
+    }
+
+    /// This replaces RWInput.GetName() to include an additional check before accessing Controls.m_controllers[]
+    [HarmonyPatch(typeof(RWInput), "GetName")]
+    class Controllers_Overwrite_RWInput_GetName
+    {
+        // A Delegate for being able to call RWInput.GetControlImageIndex without the reflection performance penalty
+        private static Func<RWInput, string, string, AtlasIndex0> GetControlImageIndexDelegate;
+
+        private static void CreateDelegateForGetControlImageIndexFunction()
+        {
+            MethodInfo methodInfo = typeof(RWInput).GetMethod("GetControlImageIndex", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (methodInfo != null)
+            {
+                GetControlImageIndexDelegate = (Func<RWInput, string, string, AtlasIndex0>)Delegate.CreateDelegate(
+                    typeof(Func<RWInput, string, string, AtlasIndex0>), methodInfo);
+            }
+            else
+            {
+                throw new Exception("Controllers_Overwrite_RWInput_GetName: Failed to find method: GetControlImageIndex");
+            }
+        }
+
+        private static bool Prefix(RWInput __instance, ref string __result)
+        {
+            if (GetControlImageIndexDelegate == null){
+                CreateDelegateForGetControlImageIndexFunction();
+            }
+
+            if (__instance.m_control_num < 0 || __instance.m_controller_num < 0)
+            {
+                __result = string.Empty;
+                return false;
+            }
+            string text = "";
+            __result = text;
+            if (Controls.m_controllers != null && __instance.m_controller_num < Controls.m_controllers.Count && Controls.m_controllers[__instance.m_controller_num] != null)
+            {
+                text = Controls.m_controllers[__instance.m_controller_num].GetControlName(__instance.m_type, __instance.m_control_num);
+            }
+            if (text != null)
+            {
+                if (text == "touch pad button")
+                {
+                    text = Loc.LS("Touch Pad Button");
+                }
+            }
+            text = text.Replace("Button", "Btn").Replace("Center", "Cntr").Replace("Throttle Wheel", "Throt Wheel");
+            if (__instance.m_type == ControlType.Axis)
+            {
+                text += ((!__instance.m_axis_pos) ? "-" : "+");
+            }
+            AtlasIndex0 controlImageIndex = GetControlImageIndexDelegate(__instance, text, Controls.m_controllers[__instance.m_controller_num].name);
+            //AtlasIndex0 controlImageIndex = __instance.GetControlImageIndex(text, Controls.m_controllers[__instance.m_controller_num].name);
+            if (controlImageIndex != AtlasIndex0.NONE)
+            {
+                string str = "%%";
+                int num = (int)controlImageIndex;
+                text = str + num.ToString("D3");
+            }
+            if (Controls.m_controllers.Count > 1 && __instance.m_controller_num < Controls.m_controllers.Count && Controls.m_controllers[__instance.m_controller_num] != null)
+            {
+                text = string.Concat(new object[]
+                {
+                    (!Controls.m_controllers[__instance.m_controller_num].isConnected) ? "X" : "J",
+                    __instance.m_controller_num + 1,
+                    ": ",
+                    text
+                });
+            }
+            __result = text;
+            return false;
         }
     }
 }
