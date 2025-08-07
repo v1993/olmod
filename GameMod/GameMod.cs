@@ -90,6 +90,8 @@ namespace GameMod.Core {
                 uConsole.RegisterCommand("export-spawns", "Exports spawnpoints from the editor to a .json file in the OLmod directory", new uConsole.DebugCommand(MPSpawnExtensionVis.Export));
             }
 
+            uConsole.RegisterCommand("getval", "Gets the value of a specified variable. Must start at a static class but can nest instances from there.", new uConsole.DebugCommand(CheckVar));
+            
             if (FindArg("-telemetry")) 
                 TelemetryMod.telemetry_enabled = true;
 
@@ -126,6 +128,43 @@ namespace GameMod.Core {
             }
         }
 
+        public static void CheckVar()
+        {
+            string input = uConsole.GetString();
+
+            if (input != null && input != "")
+            {
+                string[] substrings = input.Split('.');
+
+                try
+                {
+                    Type type = AccessTools.TypeByName(substrings[0]);
+                    if (type == null) { throw new Exception("Base static class doesn't exist"); }
+                    FieldInfo field;
+                    object val = null;
+
+                    for (int i = 1; i < substrings.Length; i++)
+                    {
+                        field = AccessTools.Field(type, substrings[i]);
+                        if (field != null)
+                        {
+                            val = field.GetValue(val);
+                            type = field.FieldType;
+                        }
+                        else
+                        {
+                            throw new Exception("Unable to fetch specified field value (named wrong? spelling error? doesn't exist?)");
+                        }
+                    }
+                    Debug.Log("CheckVar: Field value is: " + val);
+                } catch (Exception e) { Debug.Log("CheckVar: Error checking variable - " + e); }
+            }
+            else
+            {
+                Debug.Log("CheckVar syntax is \"checkvar [static class].[field]\" (classes can be nested to reach instance fields)");
+            }
+        }
+        
         public static bool FindArg(string arg)
         {
             return Array.IndexOf<string>(Environment.GetCommandLineArgs(), arg) >= 0;

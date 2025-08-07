@@ -266,6 +266,7 @@ namespace GameMod {
                 Menus.mms_team_health = ModPrefs.GetBool("MP_PM_TEAM_HEALTH", Menus.mms_team_health);
                 HUDVelocity.MenuManagerEnabled = ModPrefs.GetBool("MP_PM_SHOWHUDVELOCITY", HUDVelocity.MenuManagerEnabled);
                 Menus.mms_show_framerate = ModPrefs.GetBool("MP_PM_SHOWFRAMERATE", Menus.mms_show_framerate);
+                MPScoreboards.ShowScores = ModPrefs.GetBool("MP_PM_SHOW_SCORES", MPScoreboards.ShowScores);
                 Menus.mms_audio_occlusion_strength = ModPrefs.GetInt("MP_PM_AUDIO_OCCLUSION_STRENGTH", Menus.mms_audio_occlusion_strength);
                 Menus.mms_directional_warnings = ModPrefs.GetBool("MP_PM_DIRECTIONAL_WARNINGS", Menus.mms_directional_warnings);
                 Menus.mms_loadout_hotkeys = ModPrefs.GetInt("MP_PM_LOADOUT_HOTKEYS2", Menus.mms_loadout_hotkeys);
@@ -364,6 +365,7 @@ namespace GameMod {
             ModPrefs.SetBool("MP_PM_TEAM_HEALTH", Menus.mms_team_health);
             ModPrefs.SetBool("MP_PM_SHOWHUDVELOCITY", HUDVelocity.MenuManagerEnabled);
             ModPrefs.SetBool("MP_PM_SHOWFRAMERATE", Menus.mms_show_framerate);
+            ModPrefs.SetBool("MP_PM_SHOW_SCORES", MPScoreboards.ShowScores);
             ModPrefs.SetInt("MP_PM_AUDIO_OCCLUSION_STRENGTH", Menus.mms_audio_occlusion_strength);
             ModPrefs.SetBool("MP_PM_DIRECTIONAL_WARNINGS", Menus.mms_directional_warnings);
             ModPrefs.SetInt("MP_PM_LOADOUT_HOTKEYS2", Menus.mms_loadout_hotkeys);

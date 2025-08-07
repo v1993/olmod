@@ -576,6 +576,8 @@ namespace GameMod {
                     __instance.SelectAndDrawStringOptionItem(Loc.LS("SHOW SHIP VELOCITY"), position, 12, HUDVelocity.MenuManagerEnabled ? "ON" : "OFF", "SHOW SHIP VELOCITY ON HUD", 1.5f, false);
                     position.y += 62f;
                     __instance.SelectAndDrawStringOptionItem(Loc.LS("SHOW FRAME RATE"), position, 13, Menus.mms_show_framerate ? "ON" : "OFF", "SHOW FRAME RATE ON HUD (FPS)", 1.5f, false);
+                    position.y += 62f;
+                    __instance.SelectAndDrawStringOptionItem(Loc.LS("SHOW SCORES ON HUD"), position, 14, MPScoreboards.ShowScores ? "ON" : "OFF", "SHOW SCORES NEXT TO PLAYER NAMES ON HUD IN MULTIPLAYER", 1.5f, false);
 
                     break;
                 default:
@@ -1931,6 +1933,10 @@ namespace GameMod {
                                 case 13:
                                     Menus.mms_show_framerate = !Menus.mms_show_framerate;
                                     GameManager.m_display_fps = Menus.mms_show_framerate;
+                                    MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
+                                    break;
+                                case 14:
+                                    MPScoreboards.ShowScores = !MPScoreboards.ShowScores;
                                     MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                                     break;
                                 default:

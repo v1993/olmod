@@ -270,7 +270,10 @@ namespace GameMod
             if (my_team)
                 UIManager.DrawQuadBarHorizontal(pos, 15f, 15f, w * 2f, c, 7);
             UIManager.DrawQuadBarHorizontal(pos, 12f, 12f, w * 2f, c, 7);
-            uie.DrawDigitsVariable(pos + Vector2.right * w, score, 0.55f, StringOffset.RIGHT, color, uie.m_alpha);
+            if (MPScoreboards.ShowScores)
+            {
+                uie.DrawDigitsVariable(pos + Vector2.right * w, score, 0.55f, StringOffset.RIGHT, color, uie.m_alpha);
+            }
             uie.DrawStringSmall(NetworkMatch.GetTeamName(team), pos - Vector2.right * (w + 9f), 0.5f, StringOffset.LEFT, color, 1f, -1f);
         }
 

@@ -828,6 +828,8 @@ namespace GameMod
                     break;
             }
             player.c_player_ship.m_turn_speed_mp = num;
+            //Debug.Log("CCF SetMultiplayerLoadout called on " + (GameplayManager.IsDedicatedServer() ? "server" : "client") + ", M_TURN_SPEED_MP for " + player.m_mp_name + " set to " + player.c_player_ship.m_turn_speed_mp); // CCF
+            //Debug.Log("CCF (continued on " + (GameplayManager.IsDedicatedServer() ? "server" : "client") + " for " + player.m_mp_name + "), opt_turn_speed_limit set to " + player.m_player_control_options.opt_turn_speed_limit + ", NetworkMatch.m_turn_speed_limit set to " + NetworkMatch.m_turn_speed_limit); // CCF
             return;
         }
 
