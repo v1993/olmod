@@ -13,12 +13,20 @@ using UnityEngine.Networking;
 
 namespace GameMod
 {
+
+    // commandline arguments:
+    //      telemetry   = enables the telemetry output
+    //      telemetry-ip = ip to send udp packets towards (optional)
+    //      telemetry-port = port to send udp packets towards (optional)
+
     /// <summary>
     /// v 1.1.1
     /// </summary>
     internal class TelemetryMod
     {
-        private static bool telemetry_enabled = true;
+        public static bool telemetry_enabled = false;
+        public static string telemetry_ip = "127.0.0.1";
+        public static int telemetry_port = 4123;
         private static float event_boosting = 0.0f;
         private static float event_primary_fire = 0.0f;
         private static float event_secondary_fire = 0.0f;
@@ -76,8 +84,8 @@ namespace GameMod
                     initialized = true;
                     udpSenderObject = new GameObject("UdpTelemetrySender");
                     telemetryComponent = udpSenderObject.AddComponent<Telemetry>();
-                    telemetryComponent.IP = "127.0.0.1";
-                    telemetryComponent.port = 4123;
+                    telemetryComponent.IP = telemetry_ip;
+                    telemetryComponent.port = telemetry_port;
                 }
                 else
                 {
@@ -252,7 +260,7 @@ namespace GameMod
             private void Start()
             {
                 DontDestroyOnLoad(gameObject);
-                this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(this.IP), this.port);
+                this.remoteEndPoint = new IPEndPoint(IPAddress.Parse(IP), port);
                 client = new UdpClient();
                 local_player_data = new PlayerData();
                 this.StartCoroutine(nameof(Telemetry_Start));
