@@ -3,6 +3,7 @@ using Overload;
 using Rewired;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace GameMod
 {
@@ -769,6 +771,155 @@ namespace GameMod
                 Debug.LogFormat("ControllerNameRemapper: mapping '{0}' -> '{1}'", origName, newName);
                 field_m_name.SetValue(__instance, newName);
             }
+        }
+    }
+
+    /// This replaces RWInput.GetName() to include an additional check before accessing Controls.m_controllers[]
+    [HarmonyPatch(typeof(RWInput), "GetName")]
+    class Controllers_Overwrite_RWInput_GetName
+    {
+        private static bool Prefix(RWInput __instance, ref string __result)
+        {
+            if (__instance.m_control_num < 0 || __instance.m_controller_num < 0)
+            {
+                __result = string.Empty;
+                return false;
+            }
+            string text = "";
+            __result = text;
+            if (Controls.m_controllers != null && __instance.m_controller_num < Controls.m_controllers.Count && Controls.m_controllers[__instance.m_controller_num] != null)
+            {
+                text = Controls.m_controllers[__instance.m_controller_num].GetControlName(__instance.m_type, __instance.m_control_num);
+            }
+            if (text != null)
+            {
+                if (text == "touch pad button")
+                {
+                    text = Loc.LS("Touch Pad Button");
+                }
+            }
+            text = text.Replace("Button", "Btn").Replace("Center", "Cntr").Replace("Throttle Wheel", "Throt Wheel");
+            if (__instance.m_type == ControlType.Axis)
+            {
+                text += ((!__instance.m_axis_pos) ? "-" : "+");
+            }
+            AtlasIndex0 controlImageIndex = GetControlImageIndex(__instance, text, Controls.m_controllers[__instance.m_controller_num].name);
+            if (controlImageIndex != AtlasIndex0.NONE)
+            {
+                string str = "%%";
+                int num = (int)controlImageIndex;
+                text = str + num.ToString("D3");
+            }
+            if (Controls.m_controllers.Count > 1 && __instance.m_controller_num < Controls.m_controllers.Count && Controls.m_controllers[__instance.m_controller_num] != null)
+            {
+                text = string.Concat(new object[]
+                {
+                    (!Controls.m_controllers[__instance.m_controller_num].isConnected) ? "X" : "J",
+                    __instance.m_controller_num + 1,
+                    ": ",
+                    text
+                });
+            }
+            __result = text;
+            return false;
+        }
+
+        private static AtlasIndex0 GetControlImageIndex(RWInput __instance, string control_name, string controller_name)
+        {
+            bool flag = false;
+            string name = Controls.m_controllers[__instance.m_controller_num].name;
+            if (name.IndexOf("Xbox") != -1 || name.StartsWith("XInput Gamepad"))
+            {
+                flag = true;
+            }
+            else if (name.IndexOf("DualShock") == -1)
+            {
+                return AtlasIndex0.NONE;
+            }
+            switch (control_name)
+            {
+                case "Circle":
+                    return AtlasIndex0.PS4_BUTTON01;
+                case "Square":
+                    return AtlasIndex0.PS4_BUTTON03;
+                case "Cross":
+                    return AtlasIndex0.PS4_BUTTON00;
+                case "Triangle":
+                    return AtlasIndex0.PS4_BUTTON02;
+                case "X":
+                    return AtlasIndex0.XB1_BUTTON03;
+                case "Y":
+                    return AtlasIndex0.XB1_BUTTON02;
+                case "A":
+                    return AtlasIndex0.XB1_BUTTON00;
+                case "B":
+                    return AtlasIndex0.XB1_BUTTON01;
+                case "Right Stick Y-":
+                    return (!flag) ? AtlasIndex0.PS4_RS00 : AtlasIndex0.XB1_RS00;
+                case "Right Stick X+":
+                    return ((!flag) ? AtlasIndex0.PS4_RS00 : AtlasIndex0.XB1_RS00) + 1;
+                case "Right Stick Y+":
+                    return ((!flag) ? AtlasIndex0.PS4_RS00 : AtlasIndex0.XB1_RS00) + 2;
+                case "Right Stick X-":
+                    return ((!flag) ? AtlasIndex0.PS4_RS00 : AtlasIndex0.XB1_RS00) + 3;
+                case "Left Stick Y-":
+                    return (!flag) ? AtlasIndex0.PS4_LS00 : AtlasIndex0.XB1_LS00;
+                case "Left Stick X+":
+                    return ((!flag) ? AtlasIndex0.PS4_LS00 : AtlasIndex0.XB1_LS00) + 1;
+                case "Left Stick Y+":
+                    return ((!flag) ? AtlasIndex0.PS4_LS00 : AtlasIndex0.XB1_LS00) + 2;
+                case "Left Stick X-":
+                    return ((!flag) ? AtlasIndex0.PS4_LS00 : AtlasIndex0.XB1_LS00) + 3;
+                case "L1":
+                    return AtlasIndex0.PS4_L1;
+                case "L2+":
+                case "L2-":
+                case "L2":
+                    return AtlasIndex0.PS4_L2;
+                case "R1":
+                    return AtlasIndex0.PS4_R1;
+                case "R2+":
+                case "R2-":
+                case "R2":
+                    return AtlasIndex0.PS4_R2;
+                case "Left Shoulder":
+                    return AtlasIndex0.XB1_L1;
+                case "Left Trigger":
+                case "Left Trigger+":
+                case "Left Trigger-":
+                    return AtlasIndex0.XB1_L2;
+                case "Right Shoulder":
+                    return AtlasIndex0.XB1_R1;
+                case "Right Trigger":
+                case "Right Trigger+":
+                case "Right Trigger-":
+                    return AtlasIndex0.XB1_R2;
+                case "Right Stick Btn":
+                    return (!flag) ? AtlasIndex0.PS4_RIGHTCLICK : AtlasIndex0.XB1_RIGHTCLICK;
+                case "Left Stick Btn":
+                    return (!flag) ? AtlasIndex0.PS4_LEFTCLICK : AtlasIndex0.XB1_LEFTCLICK;
+                case "D-Pad Down":
+                    return (!flag) ? AtlasIndex0.PS4_DPAD00 : AtlasIndex0.XB1_DPAD00;
+                case "D-Pad Right":
+                    return ((!flag) ? AtlasIndex0.PS4_DPAD00 : AtlasIndex0.XB1_DPAD00) + 1;
+                case "D-Pad Up":
+                    return ((!flag) ? AtlasIndex0.PS4_DPAD00 : AtlasIndex0.XB1_DPAD00) + 2;
+                case "D-Pad Left":
+                    return ((!flag) ? AtlasIndex0.PS4_DPAD00 : AtlasIndex0.XB1_DPAD00) + 3;
+                case "Options":
+                    return AtlasIndex0.PS4_OPTIONS;
+                case "Share":
+                    return AtlasIndex0.PS4_SHARE;
+                case "Start":
+                    return (!flag) ? AtlasIndex0.NONE : AtlasIndex0.XB360_START;
+                case "Back":
+                    return (!flag) ? AtlasIndex0.NONE : AtlasIndex0.XB360_BACK;
+                case "View":
+                    return AtlasIndex0.XB1_VIEW;
+                case "Menu":
+                    return AtlasIndex0.XB1_MENU;
+            }
+            return AtlasIndex0.NONE;
         }
     }
 }
