@@ -1289,7 +1289,17 @@ END_ENTRY
             set
             {
                 MPServerOptimization.enabled = value;
-                Debug.Log("CCF Client-side physics optimizations are " + (value ? "ENABLED" : "DISABLED") + " this round");
+                Debug.Log("Client-side physics optimizations are " + (value ? "ENABLED" : "DISABLED") + " this round");
+            }
+        }
+
+        public static int RollSpeedLimit
+        {
+            get { return MPServerOptimization.RoundRollSpeedLimit; }
+            set
+            {
+                MPServerOptimization.RoundRollSpeedLimit = value;
+                Debug.Log("Roll speed limit is set to +" + (value - 3) + " for this round");
             }
         }
 
@@ -1322,6 +1332,7 @@ END_ENTRY
             jobject["audiotauntsupport"] = AudioTauntsSupported;
             jobject["loadoutfilter"] = (int)LoadoutFilterBitmask;
             jobject["clientphysics"] = ClientPhysics;
+            jobject["rollspeedlimit"] = RollSpeedLimit;
             return jobject;
         }
 
@@ -1357,6 +1368,7 @@ END_ENTRY
             AudioTauntsSupported = root["audiotauntsupport"].GetBool(false);
             LoadoutFilterBitmask = root["loadoutfilter"].GetInt(MPLoadouts.MASK_DEFAULT);
             ClientPhysics = root["clientphysics"].GetBool(false);
+            RollSpeedLimit = root["rollspeedlimit"].GetInt(7);
         }
 
         public static string GetModeString(MatchMode mode)
@@ -1653,6 +1665,7 @@ END_ENTRY
             MPModPrivateData.ThunderboltPassthrough = MPThunderboltPassthrough.isAllowed;
             MPModPrivateData.LoadoutFilterBitmask = MPLoadouts.LoadoutFilterBitmask;
             MPModPrivateData.ClientPhysics = MPServerOptimization.prefEnabled;
+            MPModPrivateData.RollSpeedLimit = MPServerOptimization.RollSpeedLimit;
             if (Menus.mms_mp_projdata_fn == "STOCK") {
                 MPModPrivateData.CustomProjdata = string.Empty;
             } else {

@@ -65,14 +65,17 @@ namespace GameMod
 		public static bool prefEnabled = true; // the toggle used by the menus - sent to the server on match creation and saved in player settings, but otherwise not used
 		public static bool enabled = true; // The toggle used in-match to determine whether or not to use the client-side physics optimizations
 
-		public static int InputBufferLength = 2; // 3 ticks is stock (50ms), 2 seems universally smooth (33ms), 1 feels great but is very network-sensitive (16.7ms) -- sticking with 2 ticks for now
-		public static float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
-		public static int MissedFramesThreshold = 5; // threshold for number of missed frames for a player before they are forced to skip a frame to allow the buffer to refill
+		public const int InputBufferLength = 2; // 3 ticks is stock (50ms), 2 seems universally smooth (33ms), 1 feels great but is very network-sensitive (16.7ms) -- sticking with 2 ticks for now
+		public const float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
+		public const int MissedFramesThreshold = 5; // threshold for number of missed frames for a player before they are forced to skip a frame to allow the buffer to refill
 
-		public static Dictionary<NetworkInstanceId, int> playerRespawnDelay = new Dictionary<NetworkInstanceId, int>(16); // wait 60 ticks after a respawn before allowing interpolation if frames to let the first few player states to get through
+		public static Dictionary<NetworkInstanceId, int> playerRespawnDelay = new Dictionary<NetworkInstanceId, int>(16); // wait 120 ticks after a respawn before allowing interpolation if frames to let the first few player states to get through
 
 		public static bool ODTurning = true; // allows OD to boost turning speed if true
 		public static bool RollFix = false; // allows roll speed to be unaffected by mouse movement if true
+
+		public static int RollSpeedLimit = 7; // 7 is "+4", working down from there. 3 is the neutral position. Menu value.
+		public static int RoundRollSpeedLimit = 7; // the value actually used in the active round.
 
 		public static PlayerEncodedPhysics current;
 		public static PlayerPhysicsMessage message;
@@ -273,11 +276,20 @@ namespace GameMod
 
 			public static int RollFixCheck(int rollSpeed, bool mouseAimed)
 			{
-				if ((GameplayManager.IsDedicatedServer() || !RollFix || !enabled) && mouseAimed) // only way we hit this as a server is if the client doesn't support the server optimizations, thus the roll fix
-				{
-					return 3; // neutral position in the array, = 1f
+				//if ((GameplayManager.IsDedicatedServer() || !RollFix || !enabled) && mouseAimed) // only way we hit this as a server is if the client doesn't support the server optimizations, thus the roll fix
+				//{
+				//	return 3; // neutral position in the array, = 1f
+				//}
+				//return rollSpeed;
+
+				if (GameplayManager.IsDedicatedServer() || !enabled) // this branch will only actually fire on the server at all if the client being simmed doesn't support the server optimizations (or they are turned off)
+                {
+					return (mouseAimed ? 3 : rollSpeed);
 				}
-				return rollSpeed;
+				else
+				{
+					return ((mouseAimed && !RollFix) ? 3 : Math.Min(rollSpeed, RoundRollSpeedLimit));
+				}
 			}
 		}
 
@@ -499,9 +511,9 @@ namespace GameMod
 				int spawndelay;
 				playerRespawnDelay.TryGetValue(player.netId, out spawndelay);
 
-				if (!player.m_server_input_primed || player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0 || NetworkMatch.m_match_state == MatchState.POSTGAME) // set a delay if dead/respawning/round done and hold it at 30 while in that state
+				if (!player.m_server_input_primed || player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0 || NetworkMatch.m_match_state == MatchState.POSTGAME) // set a delay if dead/respawning/round done and hold it at 120 while in that state
 				{
-					spawndelay = 30;
+					spawndelay = 120;
 					playerRespawnDelay[player.netId] = spawndelay;
 				} // decremented in SendSnapshotsToPlayers in MPNoPositionCompression
 
@@ -520,10 +532,12 @@ namespace GameMod
 					player.PauseRigidBody();
 					player.m_input_deficit = Mathf.Clamp(++player.m_input_deficit, 0, 60); // reusing this to track missing frames so we can skip when needed to let the buffer refill
 
+					/*
 					if (spawndelay == 0 && player.m_input_deficit > MissedFramesThreshold)
 					{
 						Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping this frame intentionally to allow buffer catch-up==");
 					}
+					*/
 
 				}
 				player.ProcessRemotePlayerFiringControlsPost();

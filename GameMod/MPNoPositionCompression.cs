@@ -206,7 +206,8 @@ namespace GameMod {
         }
     }
 
-    // CCF-------- get rid of this whole thing as long as it's not actually getting called
+    /*
+    // -------- get rid of this whole thing, see below
     /// <summary>
     /// 
     /// </summary>
@@ -242,7 +243,8 @@ namespace GameMod {
             return false;
         }
     }
-    // CCF-------- get rid of this whole thing ^^ as long as it's not actually getting called
+    // -------- ^^ get rid of this whole thing, see below
+    */
 
     // might as well just generate the snapshot list once since there's already checks in place in olmod and in stock to not apply a snapshot to the local player
     [HarmonyPatch(typeof(Server), "SendSnapshotsToPlayers")]
@@ -251,7 +253,6 @@ namespace GameMod {
         public static NewPlayerSnapshotToClientMessage m_snapshot_buffer = new NewPlayerSnapshotToClientMessage();
 
         public static Dictionary<NetworkInstanceId, int> playerMissingTicks = new Dictionary<NetworkInstanceId, int>(16); // keeps track of how many ticks in a row have been missed (and therefore extrapolated) for a player
-        //public static Dictionary<NetworkInstanceId, int> playerRespawnDelay = new Dictionary<NetworkInstanceId, int>(16); // wait 60 ticks after a respawn before allowing interpolation if frames to let the first few player states to get through
 
         public static bool Prefix()
         {
@@ -272,7 +273,7 @@ namespace GameMod {
 
                     // Moved to MPServerOptimization in ProcessCachedControlsRemote so we have the spawndelay counter available earlier in the loop
                     /*
-                    if ((spawndelay == 0 || !player.m_server_input_primed) && (player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0)) // set a delay if dead/respawning and hold it at 60 while in that state
+                    if ((spawndelay == 0 || !player.m_server_input_primed) && (player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0)) // set a delay if dead/respawning and hold it at 120 while in that state
                     {
                         spawndelay = 60;
                     }
@@ -283,7 +284,7 @@ namespace GameMod {
                         playerSnapshot.m_pos = player.transform.position;
                         playerSnapshot.m_rot = player.transform.rotation;
                         playerMissingTicks.Remove(playerSnapshot.m_net_id);
-                        MPServerOptimization.playerRespawnDelay[playerSnapshot.m_net_id] = Mathf.Max(--spawndelay, 0); // this gets reset to 30 on the next frame if still dead, otherwise it continues to count down
+                        MPServerOptimization.playerRespawnDelay[playerSnapshot.m_net_id] = Mathf.Max(--spawndelay, 0); // this gets reset to 120 on the next frame if still dead, otherwise it continues to count down
                     }
                     else // extrapolate the movement 1 frame forward so it doesn't just freeze in the case of a starved buffer or a network hitch
                     {
@@ -292,9 +293,9 @@ namespace GameMod {
                         playerMissingTicks.TryGetValue(playerSnapshot.m_net_id, out numticks);
                         numticks = Mathf.Min(++numticks, 12); // if we keep growing extrapolation some -weird- stuff starts happening, cap at 200ms worth of movement
                         playerMissingTicks[playerSnapshot.m_net_id] = numticks;
-                        Debug.Log("==CCF EXTRAPOLATING FRAME for " + player.m_mp_name + " on player tick " + player.m_server_tick + " -- extrapolating " + numticks + " ticks==");
+                        //Debug.Log("==CCF EXTRAPOLATING FRAME for " + player.m_mp_name + " on player tick " + player.m_server_tick + " -- extrapolating " + numticks + " ticks==");
                         playerSnapshot.m_pos = Vector3.LerpUnclamped(player.transform.position, player.transform.position + playerSnapshot.m_vel, Time.fixedDeltaTime * numticks);
-                        playerSnapshot.m_rot = Quaternion.Euler(playerSnapshot.m_vrot * Mathf.Rad2Deg * Time.fixedDeltaTime * numticks) * player.transform.rotation; // TODO - project off the previous fake snapshot for some semblance of predicted vector? Does it even matter?
+                        playerSnapshot.m_rot = Quaternion.Euler(playerSnapshot.m_vrot * Mathf.Rad2Deg * Time.fixedDeltaTime * numticks) * player.transform.rotation; // TODO - project off the previous fake snapshot for some semblance of predicted vector? Does it even matter? If we're relying on this, there's probably a better solution.
                     }
                 }
             }

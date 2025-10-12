@@ -90,7 +90,7 @@ namespace GameMod.Core {
                 uConsole.RegisterCommand("export-spawns", "Exports spawnpoints from the editor to a .json file in the OLmod directory", new uConsole.DebugCommand(MPSpawnExtensionVis.Export));
             }
 
-            uConsole.RegisterCommand("getval", "Gets the value of a specified variable. Must start at a static class but can nest instances from there.", new uConsole.DebugCommand(CheckVar));
+            uConsole.RegisterCommand("getval", "Gets the value of a specified variable -- \"getval [static class].[field]\" (classes can be nested to reach instance fields)", new uConsole.DebugCommand(GetVal));
             
             if (FindArg("-telemetry")) 
                 TelemetryMod.telemetry_enabled = true;
@@ -128,7 +128,7 @@ namespace GameMod.Core {
             }
         }
 
-        public static void CheckVar()
+        public static void GetVal()
         {
             string input = uConsole.GetString();
 
@@ -156,12 +156,12 @@ namespace GameMod.Core {
                             throw new Exception("Unable to fetch specified field value (named wrong? spelling error? doesn't exist?)");
                         }
                     }
-                    Debug.Log("CheckVar: Field value is: " + val);
-                } catch (Exception e) { Debug.Log("CheckVar: Error checking variable - " + e); }
+                    Debug.Log("GetVal: Field value is: " + val);
+                } catch (Exception e) { Debug.Log("GetVal: Error checking value - " + e); }
             }
             else
             {
-                Debug.Log("CheckVar syntax is \"checkvar [static class].[field]\" (classes can be nested to reach instance fields)");
+                Debug.Log("GetVal syntax is \"getval [static class].[field]\" (classes can be nested to reach instance fields)");
             }
         }
         

@@ -495,20 +495,48 @@ namespace GameMod {
             Vector3 newPos = Vector3.LerpUnclamped(snapshot.m_pos, snapshot.m_pos + snapshot.m_vel, t);
             Quaternion newRot;
 
+            float rotScale;
+            float arcRotScale;
+
+            switch (Menus.mms_lag_compensation_rotation_strength)
+            {
+                default:
+                case 0: // 100%
+                    rotScale = 1f;
+                    arcRotScale = 0.34f;
+                    break;
+                case 1: // 75%
+                    rotScale = 0.75f;
+                    arcRotScale = 0.45f;
+                    break;
+                case 2: // 50%
+                    rotScale = 0.5f;
+                    arcRotScale = 0.6f;
+                    break;
+                case 3: // 25%
+                    rotScale = 0.25f;
+                    arcRotScale = 0.6f; // if you're capping this far, it'd better stay capped for motion arc as well
+                    break;
+                case 4: // 10%
+                    rotScale = 0.1f;
+                    arcRotScale = 0.6f; // same
+                    break;
+            }
+
             if (Menus.mms_lag_compensation_prediction_mode == 0)
             {
                 newRot = snapshot.m_rot;
             }
             else // Vel + Rotation or Motion Arc mode
             {
-                newRot = Quaternion.Euler(snapshot.m_vrot * Mathf.Rad2Deg * t) * snapshot.m_rot; // Scales the angular velocity first now. Also the original method for this did not convert radians to degrees so was barely doing anything, thus why the default is now just straight-up disabled
+                newRot = Quaternion.Euler(snapshot.m_vrot * (Mathf.Rad2Deg * t * rotScale)) * snapshot.m_rot; // Scales the angular velocity first now. Also the original method for this did not convert radians to degrees so was barely doing anything, thus why the default is now just straight-up disabled
             }
 
             // An attempt to better predict player positions on higher pings -- this portion applies the rotation to the movement vector and then averages between the linear and rotated positions
             if (Menus.mms_lag_compensation_prediction_mode == 2) // Motion Arc mode
             {
-                Vector3 rotPos = Vector3.LerpUnclamped(snapshot.m_pos, snapshot.m_pos + ((snapshot.m_rot * Quaternion.Inverse(newRot)) * snapshot.m_vel), t);
-                newPos = Vector3.Lerp(newPos, rotPos, 0.34f); // some semblance of faking inertia -- only go ~1/3 of the way to the rotated position vector. This could probably use tuning. -- 1/2 looked good but mis-predicted, trying 1/3
+                Vector3 rotPos = Vector3.LerpUnclamped(snapshot.m_pos, snapshot.m_pos + ((Quaternion.Inverse(snapshot.m_rot) * newRot) * snapshot.m_vel), t);
+                newPos = Vector3.Lerp(newPos, rotPos, arcRotScale); // some semblance of faking inertia -- only go ~1/3 of the way to the rotated position vector when combined with the scaled-back rotational speed
             }
 
             // limit ship dive-in if enabled:
@@ -679,11 +707,14 @@ namespace GameMod {
                     }
                     else
                     {
-                        NewPlayerSnapshot oldsnapshot = GetPlayerSnapshot(msgA, player);
+                        //NewPlayerSnapshot oldsnapshot = GetPlayerSnapshot(msgA, player);
                         NewPlayerSnapshot snapshot = GetPlayerSnapshot(msgB, player);
 
-                        if (snapshot != null && oldsnapshot != null)
+                        //if (snapshot != null && oldsnapshot != null)
+                        if (snapshot != null)
                         {
+                            // Damping is currently still doing unacceptably weird things when motion fully reverses over a frame boundary. It needs a better approach. Quadratic bezier mode coming in 0.6 to resolve this.
+                            /*
                             // An attempt to put some damping on the wild swinging certain highly-mobile players appear to have on high ping. If enabled, looks back 2 snapshots and scales the amount of extrapolation by how strongly the velocity vectors are correlated.
                             if (Menus.mms_lag_compensation_damping_mode == 1)
                             {
@@ -691,8 +722,9 @@ namespace GameMod {
                             }
                             if (Menus.mms_lag_compensation_damping_mode == 2)
                             {
-                                delta_t *= Mathf.Min(Vector3.Dot(snapshot.m_vel.normalized, oldsnapshot.m_vel.normalized), 0f); // scales back by directional differences as well
+                                delta_t *= Mathf.Max(Vector3.Dot(snapshot.m_vel.normalized, oldsnapshot.m_vel.normalized), 0f); // scales back by directional differences as well
                             }
+                            */
                             extrapolatePlayer(player, snapshot, delta_t);
                         }
                     }

@@ -227,17 +227,22 @@ namespace GameMod {
             }
         }
 
-        public static string GetMMSLagCompensationDampingMode()
+        // TODO - change this to a slider when the menus eventually get rebuilt
+        public static string GetMMSLagCompensationRotationStrength()
         {
-            switch (mms_lag_compensation_damping_mode)
+            switch (mms_lag_compensation_rotation_strength)
             {
                 case 0:
                 default:
-                    return "DISABLED";
+                    return "100%";
                 case 1:
-                    return "SPEED ONLY";
+                    return "75%";
                 case 2:
-                    return "SPEED + DIRECTION";
+                    return "50%";
+                case 3:
+                    return "25%";
+                case 4:
+                    return "10%";
             }
         }
 
@@ -268,7 +273,7 @@ namespace GameMod {
             mms_lag_compensation_use_interpolation = 0;
             mms_lag_compensation_collision_limit = 0;
             mms_lag_compensation_prediction_mode = 0;
-            mms_lag_compensation_damping_mode = 0;
+            mms_lag_compensation_rotation_strength = 0;
         }
 
         public static int mms_weapon_lag_compensation_max = 100;
@@ -282,7 +287,7 @@ namespace GameMod {
         public static int mms_lag_compensation_use_interpolation = 0;
         public static int mms_lag_compensation_collision_limit = 0;
         public static int mms_lag_compensation_prediction_mode = 0;
-        public static int mms_lag_compensation_damping_mode = 0;
+        public static int mms_lag_compensation_rotation_strength = 0;
         public static string mms_mp_projdata_fn = "STOCK";
         public static bool mms_sticky_death_summary = false;
         public static int mms_damageeffect_alpha_mult = 30;
@@ -292,6 +297,7 @@ namespace GameMod {
         public static bool mms_show_framerate = false;
         public static int mms_selected_loadout_idx = 0;
         public static int mms_collision_mesh = 0;
+        public static bool mms_distinct_kill_sound = false;
     }
 
 
@@ -317,14 +323,11 @@ namespace GameMod {
             position.x += 600f;
             position.y = col_top - 250f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALLOW REAR VIEW CAMERA"), position, 11, Menus.GetMMSRearViewPIP(), Loc.LS("CLIENTS CAN CHOOSE TO HAVE REAR VIEW"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALWAYS CLOAKED"), position, 15, Menus.GetMMSAlwaysCloaked(), Loc.LS("SHIPS ARE ALWAYS CLOAKED"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("CLASSIC SPAWNS"), position, 13, Menus.GetMMSClassicSpawns(), Loc.LS("SPAWN WITH IMPULSE+ DUALS AND FALCONS"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
 
             if (MenuManager.mms_mode == ExtMatchMode.CTF)
             {
@@ -335,26 +338,20 @@ namespace GameMod {
                 uie.SelectAndDrawStringOptionItem(Loc.LS("ASSISTS"), position, 18, Menus.GetMMSAssistScoring(), Loc.LS("AWARD POINTS FOR ASSISTING WITH KILLS"), 1f, false);
             }
 
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("PROJECTILE DATA"), position, 16, Menus.mms_mp_projdata_fn == "STOCK" ? "STOCK" : System.IO.Path.GetFileName(Menus.mms_mp_projdata_fn), string.Empty, 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("ALLOW SMASH ATTACK"), position, 17, Menus.GetMMSAllowSmash(), Loc.LS("ALLOWS PLAYERS TO USE THE SMASH ATTACK"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("TB PENETRATION"), position, 20, MPThunderboltPassthrough.isAllowed ? "ON" : "OFF", Loc.LS("ALLOWS THUNDERBOLT SHOTS TO PENETRATE SHIPS"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("DAMAGE NUMBERS"), position, 21, Menus.GetMMSDamageNumbers(), Loc.LS("SHOWS THE DAMAGE YOU DO TO OTHER SHIPS"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("CLIENT-SIDE PHYSICS"), position, 23, MPServerOptimization.prefEnabled ? "ENABLED" : "DISABLED", Loc.LS("ALLOWS CLIENTS TO PASS PRE-PROCESSED PHYSICS RATHER THAN RESIMULATING INPUTS ON THE SERVER"), 1f, false);
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
-            uie.SelectAndDrawStringOptionItem(Loc.LS("SERVER INPUT BUFFER LENGTH"), position, 24, MPServerOptimization.InputBufferLength.ToString(), Loc.LS("NUMBER OF FRAMES TO BUFFER BEFORE SERVER PROCESSES INPUT IT HAS RECEIVED (OVERLOAD STOCK IS 3, TESTING VERSION IS 2)"), 1f, false); // CCF-TEMPORARY
-            //position.y += 55f;
-            position.y += 50f; // CCF-TEMPORARY
+            position.y += 50f;
+            //uie.SelectAndDrawStringOptionItem(Loc.LS("SERVER INPUT BUFFER LENGTH"), position, 24, MPServerOptimization.InputBufferLength.ToString(), Loc.LS("NUMBER OF FRAMES TO BUFFER BEFORE SERVER PROCESSES INPUT IT HAS RECEIVED (OVERLOAD STOCK IS 3, TESTING VERSION IS 2)"), 1f, false); // TESTING
+            uie.SelectAndDrawStringOptionItem(Loc.LS("ROLL SPEED LIMIT"), position, 24, "+" + (MPServerOptimization.RollSpeedLimit - 3), Loc.LS("MAXIMUM ROLL SPEED MODIFIER TO ALLOW FOR THIS ROUND"), 1f, false);
+            position.y += 50f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("COLLISION MESH"), position, 22, Menus.GetMMSCollisionMesh(), Loc.LS("COLLIDER TO USE FOR PROJECTILE->SHIP COLLISIONS"), 1f, false);
         }
 
@@ -688,8 +685,9 @@ namespace GameMod {
                         MPServerOptimization.prefEnabled = !MPServerOptimization.prefEnabled;
                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                         break;
-                    case 24: // CCF-TEMPORARY
-                        MPServerOptimization.InputBufferLength = ((3 + MPServerOptimization.InputBufferLength + UIManager.m_select_dir) % 4) + 1;
+                    case 24:
+                        //MPServerOptimization.InputBufferLength = ((3 + MPServerOptimization.InputBufferLength + UIManager.m_select_dir) % 4) + 1; // TESTING
+                        MPServerOptimization.RollSpeedLimit = 3 + ((2 + MPServerOptimization.RollSpeedLimit + UIManager.m_select_dir) % 5);
                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                         break;
                 }
@@ -888,7 +886,7 @@ namespace GameMod {
                         position.x = -260f;
                         __instance.SelectAndDrawStringOptionItem(Loc.LS("VECTOR PREDICTION"), position, 12, Menus.GetMMSLagCompensationPredictionMode(), Loc.LS("\"VELOCITY\" PROJECTS ONLY THE STRAIGHT-LINE VELOCITY - \"VELOCITY + ROTATION\" PROJECTS THE STRAIGHT-LINE VELOCITY AND CONTINUES ROTATION - \"MOTION ARC\" PARTIALLY ROTATES THE PREDICTED VELOCITY VECTOR AS THE SHIP ROTATES"), 0.9f);
                         position.x = 260f;
-                        __instance.SelectAndDrawStringOptionItem(Loc.LS("MOTION DAMPING"), position, 13, Menus.GetMMSLagCompensationDampingMode(), Loc.LS("IF ENABLED, DAMPS TWITCHY MOVEMENTS BY COMPARING SHIP VELOCITY AGAINST THE PREVIOUS FEW FRAMES. AS SPEED (AND OPTIONALLY DIRECTION) BECOME LESS CORRELATED WITH PAST FRAMES, PREDICTION STRENGTH DROPS TO COMPENSATE."), 0.9f);
+                        __instance.SelectAndDrawStringOptionItem(Loc.LS("ROTATION STRENGTH"), position, 13, Menus.GetMMSLagCompensationRotationStrength(), Loc.LS("HOW STRONGLY ANGULAR MOMENTUM IS APPLIED TO PREDICTIONS (IF AN APPLICABLE MODE IS SELECTED)"), 0.9f);
                         position.x = 0f;
                     }
                     break;
@@ -1300,7 +1298,7 @@ namespace GameMod {
                                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                                         break;
                                     case 13:
-                                        Menus.mms_lag_compensation_damping_mode = (Menus.mms_lag_compensation_damping_mode + 3 + UIManager.m_select_dir) % 3;
+                                        Menus.mms_lag_compensation_rotation_strength = (Menus.mms_lag_compensation_rotation_strength + 5 + UIManager.m_select_dir) % 5;
                                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                                         break;
                                 }
@@ -1594,14 +1592,16 @@ namespace GameMod {
     {
         private static void DrawAdditionalSoundOptions(UIElement uie, ref Vector2 position)
         {
-            position.y += 62f;
-            uie.SelectAndDrawStringOptionItem(Loc.LS("AUDIO OCCLUSION STRENGTH"), position, 5, Menus.GetMMSAudioOcclusionStrength(), Loc.LS("SOUND EFFECTS OUT OF LINE-OF-SIGHT WILL BE FILTERED DEPENDING ON DISTANCE"));
-            position.y += 62f;
-            uie.SelectAndDrawStringOptionItem(Loc.LS("DIRECTIONAL HOMING WARNINGS"), position, 6, Menus.GetMMSDirectionalWarnings(), Loc.LS("PLAYS HOMING WARNINGS FROM THE DIRECTION OF THE INCOMING PROJECTILE"));
-            position.y += 62f;
-            uie.SelectAndDrawSliderItem("AUDIO TAUNT VOLUME", position, 7, MPAudioTaunts.AClient.audio_taunt_volume / 100f);
-            position.y += 62f;
-            uie.SelectAndDrawItem("REINITIALIZE AUDIO DEVICE", position, 8, false);
+            position.y += 60f;
+            uie.SelectAndDrawSliderItem("AUDIO TAUNT VOLUME", position, 5, MPAudioTaunts.AClient.audio_taunt_volume / 100f);
+            position.y += 60f;
+            uie.SelectAndDrawStringOptionItem(Loc.LS("AUDIO OCCLUSION STRENGTH"), position, 6, Menus.GetMMSAudioOcclusionStrength(), Loc.LS("SOUND EFFECTS OUT OF LINE-OF-SIGHT WILL BE FILTERED DEPENDING ON DISTANCE"));
+            position.y += 58f;
+            uie.SelectAndDrawStringOptionItem(Loc.LS("DIRECTIONAL HOMING WARNINGS"), position, 7, Menus.GetMMSDirectionalWarnings(), Loc.LS("PLAYS HOMING WARNINGS FROM THE DIRECTION OF THE INCOMING PROJECTILE"));
+            position.y += 58f;
+            uie.SelectAndDrawStringOptionItem(Loc.LS("DISTINCT MULTIPLAYER KILL SOUNDS"), position, 8, (Menus.mms_distinct_kill_sound ? "ON" : "OFF"), Loc.LS("PLAY A DISTINCT SOUND EFFECT FOR YOUR OWN KILLS IN MULTIPLAYER"));
+            position.y += 60f;
+            uie.SelectAndDrawItem("REINITIALIZE AUDIO DEVICE", position, 9, false);
         }
 
         // First SelectAndDrawStringOptionItem() after "SPEAKER MODE" string, draw our menu
@@ -1610,9 +1610,13 @@ namespace GameMod {
             int state = 0;
             foreach (var code in codes)
             {
+                if (code.opcode == OpCodes.Ldc_R4 && (float)code.operand == 62f)
+                {
+                    code.operand = 60f; // adjusts the menu spacing to be slightly tighter
+                }
                 if (code.opcode == OpCodes.Ldc_R4 && (float)code.operand == 93f)
                 {
-                    code.operand = 220f; // offsets the menu up a bit for the extra options
+                    code.operand = 230f; // offsets the menu up a bit for the extra options
                 }
                 if (code.opcode == OpCodes.Ldstr && (string)code.operand == "SPEAKER MODE")
                     state = 1;
@@ -1642,6 +1646,9 @@ namespace GameMod {
             switch (menu_selection)
             {
                 case 5:
+                    MPAudioTaunts.AClient.audio_taunt_volume = UpdateVolume(MPAudioTaunts.AClient.audio_taunt_volume);
+                    break;
+                case 6:
                     Menus.mms_audio_occlusion_strength = (Menus.mms_audio_occlusion_strength + UIManager.m_select_dir) % 4;
                     if (Menus.mms_audio_occlusion_strength < 0)
                     {
@@ -1649,14 +1656,15 @@ namespace GameMod {
                     }
                     MenuManager.PlaySelectSound(1f);
                     break;
-                case 6:
+                case 7:
                     Menus.mms_directional_warnings = !Menus.mms_directional_warnings;
                     MenuManager.PlaySelectSound(1f);
                     break;
-                case 7:
-                    MPAudioTaunts.AClient.audio_taunt_volume = UpdateVolume(MPAudioTaunts.AClient.audio_taunt_volume);
-                    break;
                 case 8:
+                    Menus.mms_distinct_kill_sound = !Menus.mms_distinct_kill_sound;
+                    MenuManager.PlaySelectSound(1f);
+                    break;
+                case 9:
                     AudioSettings.Reset(AudioSettings.GetConfiguration());
                     GameManager.m_audio.SFXVolume = MenuManager.opt_volume_sfx;
                     GameManager.m_audio.MusicVolume = MenuManager.opt_volume_music;
@@ -2518,9 +2526,9 @@ namespace GameMod {
             // Right column
             position.x = 320f;
             position.y = top;
-            uie.SelectAndDrawStringOptionItem(Loc.LS("OVERDRIVE-ENHANCED TURNING"), position, 10, MPServerOptimization.ODTurning ? Loc.LS("ON") : Loc.LS("OFF"), Loc.LS("OVERDRIVE POWERUPS WILL ALSO GRANT ADDITIONAL TURN SPEED WHEN ENABLED"), colwidth); // CCF needs to be server option safe, check it
+            uie.SelectAndDrawStringOptionItem(Loc.LS("OVERDRIVE-ENHANCED TURNING"), position, 10, MPServerOptimization.ODTurning ? Loc.LS("ON") : Loc.LS("OFF"), Loc.LS("OVERDRIVE POWERUPS WILL ALSO GRANT ADDITIONAL TURN SPEED WHEN ENABLED"), colwidth);
             position.y += 62f;
-            uie.SelectAndDrawStringOptionItem(Loc.LS("MOUSE AIMING ROLL BEHAVIOR"), position, 11, MPServerOptimization.RollFix ? Loc.LS("INDEPENDENT") : Loc.LS("LIMITED"), Loc.LS("\"INDEPENDENT\" ALLOWS THE FULL SELECTED JOY/KB ROLL SPEED WHILE AIMING WITH MOUSE, \"LIMITED\" RESTRICTS ROLL SPEED WHILE AIMING (STOCK, TECHNICALLY A BUG)"), colwidth); // CCF needs to be server option safe, check it
+            uie.SelectAndDrawStringOptionItem(Loc.LS("MOUSE AIMING ROLL BEHAVIOR"), position, 11, MPServerOptimization.RollFix ? Loc.LS("INDEPENDENT") : Loc.LS("LIMITED"), Loc.LS("\"INDEPENDENT\" ALLOWS THE FULL SELECTED JOY/KB ROLL SPEED WHILE AIMING WITH MOUSE, \"LIMITED\" RESTRICTS ROLL SPEED WHILE AIMING (STOCK, TECHNICALLY A BUG)"), colwidth);
             position.y += 62f;
             uie.SelectAndDrawStringOptionItem(Loc.LS("SMASH COMBO BUTTONS"), position, 3, MenuManager.GetSmashCombo(), Loc.LS("BUTTON COMBO TO TRIGGER A SMASH ATTACK (IN ADDITION TO DEDICATED BUTTON)"), colwidth);
             position.y += 62f;
