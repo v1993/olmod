@@ -1,4 +1,4 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 
 using Overload;
 
@@ -79,6 +79,8 @@ namespace GameMod
         {
             private static void Postfix()
             {
+                if (!telemetry_enabled)
+                    return;
                 if (!initialized & GameManager.m_local_player != null)
                 {
                     initialized = true;
@@ -139,8 +141,6 @@ namespace GameMod
             }
         }
 
-        
-        
 
         public static Vector3 GetPitchYawRoll(Transform transform)
         {
@@ -312,8 +312,6 @@ namespace GameMod
                     data = null;
                 }
             }
-
-            
         }
     }
 }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using UnityEngine;
 
@@ -11,6 +12,8 @@ namespace GameMod
 {
     class MPScoreboards
     {
+        public static bool ShowScores = true;
+
         public class Anarchy
         {
             static FieldInfo m_alpha_Field = AccessTools.Field(typeof(UIElement), "m_alpha");
@@ -760,7 +763,7 @@ namespace GameMod
 
 
     [HarmonyPatch(typeof(UIElement), "DrawHUDScoreInfo")]
-    class MatchModeRace_UIElement_DrawHUDScoreInfo
+    class MPScoreboards_UIElement_DrawHUDScoreInfo
     {
         static bool Prefix(Vector2 pos, UIElement __instance, Vector2 ___temp_pos, float ___m_alpha)
         {
@@ -780,6 +783,127 @@ namespace GameMod
                 default:
                     return true;
             }
+        }
+
+        // handles the score display bypass for Anarchy mode on the HUD
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes, ILGenerator gen)
+        {
+            int state = 0;
+            Label label = gen.DefineLabel();
+
+            foreach (var code in codes)
+            {
+                if (code.opcode == OpCodes.Ldsfld && code.operand == AccessTools.Field(typeof(NetworkMatch), "m_head_to_head"))
+                {
+                    state = 1;
+                    yield return new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(MPScoreboards), "ShowScores"));
+                    yield return new CodeInstruction(OpCodes.Brfalse, label);
+                }
+                else if (state == 1 || state == 2)
+                {
+                    if (code.opcode == OpCodes.Call && code.operand == AccessTools.Method(typeof(UIElement), "DrawDigitsVariable"))
+                    {
+                        state++;
+                    }
+                }
+                else if (state == 3 && code.opcode == OpCodes.Stfld) // the final store command in "temp_pos.x -= 35f"
+                {
+                    state++;
+                }
+                else if (state == 4)
+                {
+                    code.labels.Add(label);
+                    state++;
+                }
+                else if (state == 5 && code.opcode == OpCodes.Ldc_R4 && (float)code.operand == 27f) // correct the horizontal shift
+                {
+                    code.opcode = OpCodes.Call;
+                    code.operand = AccessTools.Method(typeof(MPScoreboards_UIElement_DrawHUDScoreInfo), "NameShiftHUDScore");
+                    state++;
+                }
+                yield return code;
+            }
+        }
+
+        public static float NameShiftHUDScore()
+        {
+            return (MPScoreboards.ShowScores ? 27f : -8f);
+        }
+    }
+
+    // handles the score display bypass for Team Anarchy mode on the HUD
+    [HarmonyPatch(typeof(UIElement), "DrawTeamScoreSmall")]
+    class MPScoreboards_UIElement_DrawTeamScoreSmall
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes, ILGenerator gen)
+        {
+            Label label = gen.DefineLabel();
+
+            foreach (var code in codes)
+            {
+                if (code.opcode == OpCodes.Ldsfld && code.operand == AccessTools.Method(typeof(UIElement), "DrawDigitsVariable"))
+                {
+                    yield return new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(MPScoreboards), "ShowScores"));
+                    yield return new CodeInstruction(OpCodes.Brfalse, label);
+                    yield return code;
+                    CodeInstruction endcode = new CodeInstruction(OpCodes.Pop);
+                    endcode.labels.Add(label);
+                    yield return endcode;
+                }
+                else
+                {
+                    yield return code;
+                }
+            }
+        }
+    }
+
+    // handles the score display bypass for Anarchy mode on the death screen -- same patch as on DrawHUDScoreInfo
+    [HarmonyPatch(typeof(UIElement), "DrawMpMiniScoreboard")]
+    class MPScoreboards_UIElement_DrawMpMiniScoreboard
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes, ILGenerator gen)
+        {
+            int state = 0;
+            Label label = gen.DefineLabel();
+
+            foreach (var code in codes)
+            {
+                if (code.opcode == OpCodes.Ldsfld && code.operand == AccessTools.Field(typeof(NetworkMatch), "m_head_to_head"))
+                {
+                    state = 1;
+                    yield return new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(MPScoreboards), "ShowScores"));
+                    yield return new CodeInstruction(OpCodes.Brfalse, label);
+                }
+                else if (state == 1 || state == 2)
+                {
+                    if (code.opcode == OpCodes.Call && code.operand == AccessTools.Method(typeof(UIElement), "DrawDigitsVariable"))
+                    {
+                        state++;
+                    }
+                }
+                else if (state == 3 && code.opcode == OpCodes.Stfld) // the final store command in "temp_pos.x -= 40f"
+                {
+                    state++;
+                }
+                else if (state == 4)
+                {
+                    code.labels.Add(label);
+                    state++;
+                }
+                else if (state == 5 && code.opcode == OpCodes.Ldc_R4 && (float)code.operand == 30f) // correct the horizontal shift
+                {
+                    code.opcode = OpCodes.Call;
+                    code.operand = AccessTools.Method(typeof(MPScoreboards_UIElement_DrawMpMiniScoreboard), "NameShiftMPMini");
+                    state++;
+                }
+                yield return code;
+            }
+        }
+
+        public static float NameShiftMPMini()
+        {
+            return (MPScoreboards.ShowScores ? 30f : -10f);
         }
     }
 }

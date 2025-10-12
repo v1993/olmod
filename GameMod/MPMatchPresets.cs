@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Overload;
@@ -68,7 +68,8 @@ namespace GameMod
                 shipMeshCollider = Menus.mms_collision_mesh,
                 thunderboltPassthrough = MPThunderboltPassthrough.isAllowed,
                 loadoutFilterBitmask = MPLoadouts.LoadoutFilterBitmask,
-                serverOptimizations = MPServerOptimization.prefEnabled
+                serverOptimizations = MPServerOptimization.prefEnabled,
+                rollSpeedLimit = MPServerOptimization.RollSpeedLimit
             });
 
             presets.Add(new MPMatchPreset
@@ -108,7 +109,7 @@ namespace GameMod
                 damageNumbers = true,
                 assistScoring = true,
                 teamCount = 2,
-                shipMeshCollider = 0,
+                shipMeshCollider = 2,
                 thunderboltPassthrough = false,
                 loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
                 serverOptimizations = true
@@ -150,12 +151,12 @@ namespace GameMod
                 allowSmash = false,
                 assistScoring = true,
                 teamCount = 2,
-                shipMeshCollider = 0,
+                shipMeshCollider = 2,
                 damageNumbers = true,
                 thunderboltPassthrough = false,
                 loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT,
                 serverOptimizations = true
-            });
+        });
 
             GameManager.m_gm.StartCoroutine(GetMatchPresets());
         }        
@@ -197,11 +198,12 @@ namespace GameMod
             public bool damageNumbers;
             public bool assistScoring = true;
             public int teamCount = 2;
-            public int shipMeshCollider = 0;
+            public int shipMeshCollider = 2;
             public float colliderScale = 1f;
             public bool thunderboltPassthrough;
             public int loadoutFilterBitmask = MPLoadouts.MASK_DEFAULT;
             public bool serverOptimizations = true;
+            public int rollSpeedLimit = 7;
 
             public void Apply()
             {
@@ -251,6 +253,7 @@ namespace GameMod
                 MPThunderboltPassthrough.isAllowed = this.thunderboltPassthrough;
                 MPLoadouts.LoadoutFilterBitmask = this.loadoutFilterBitmask;
                 MPServerOptimization.prefEnabled = this.serverOptimizations;
+                MPServerOptimization.RollSpeedLimit = this.rollSpeedLimit;
             }
         }
 

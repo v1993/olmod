@@ -253,7 +253,7 @@ namespace GameMod {
                 Menus.mms_weapon_lag_compensation_scale = ModPrefs.GetInt("MP_PM_WEAPON_LAG_COMPENSATION_SCALE", Menus.mms_weapon_lag_compensation_scale);
                 Menus.mms_lag_compensation_collision_limit = ModPrefs.GetInt("MP_PM_SHIP_LAG_COMPENSATION_COLLISION_LIMIT", Menus.mms_lag_compensation_collision_limit);
                 Menus.mms_lag_compensation_prediction_mode = ModPrefs.GetInt("MP_LAG_COMPENSATION_PREDICTION_MODE", Menus.mms_lag_compensation_prediction_mode);
-                Menus.mms_lag_compensation_damping_mode = ModPrefs.GetInt("MP_LAG_COMPENSATION_DAMPING_MODE", Menus.mms_lag_compensation_damping_mode);
+                Menus.mms_lag_compensation_rotation_strength = ModPrefs.GetInt("MP_LAG_COMPENSATION_ROTATION_STRENGTH", Menus.mms_lag_compensation_rotation_strength);
                 Menus.mms_sticky_death_summary = ModPrefs.GetBool("MP_PM_STICKY_DEATH_SUMMARY", Menus.mms_sticky_death_summary);
                 MPDeathReview.stickyDeathReview = Menus.mms_sticky_death_summary;
                 Menus.mms_reduced_ship_explosions = ModPrefs.GetBool("MP_PM_REDUCED_SHIP_EXPLOSIONS", Menus.mms_reduced_ship_explosions);
@@ -266,6 +266,7 @@ namespace GameMod {
                 Menus.mms_team_health = ModPrefs.GetBool("MP_PM_TEAM_HEALTH", Menus.mms_team_health);
                 HUDVelocity.MenuManagerEnabled = ModPrefs.GetBool("MP_PM_SHOWHUDVELOCITY", HUDVelocity.MenuManagerEnabled);
                 Menus.mms_show_framerate = ModPrefs.GetBool("MP_PM_SHOWFRAMERATE", Menus.mms_show_framerate);
+                MPScoreboards.ShowScores = ModPrefs.GetBool("MP_PM_SHOW_SCORES", MPScoreboards.ShowScores);
                 Menus.mms_audio_occlusion_strength = ModPrefs.GetInt("MP_PM_AUDIO_OCCLUSION_STRENGTH", Menus.mms_audio_occlusion_strength);
                 Menus.mms_directional_warnings = ModPrefs.GetBool("MP_PM_DIRECTIONAL_WARNINGS", Menus.mms_directional_warnings);
                 Menus.mms_loadout_hotkeys = ModPrefs.GetInt("MP_PM_LOADOUT_HOTKEYS2", Menus.mms_loadout_hotkeys);
@@ -298,8 +299,11 @@ namespace GameMod {
                 MPServerOptimization.ODTurning = ModPrefs.GetBool("OD_TURNING", true);
                 MPServerOptimization.RollFix = ModPrefs.GetBool("MOUSE_ROLL_FIX", false);
                 MPServerOptimization.prefEnabled = ModPrefs.GetBool("MP_CLIENT_PHYSICS", true);
+                MPServerOptimization.RollSpeedLimit = ModPrefs.GetInt("MP_ROLL_SPEED_LIMIT", 7);
 
                 QualitySettings.maxQueuedFrames = ModPrefs.GetInt("GFX_MAXQUEUEDFRAMES", 2);
+
+                Menus.mms_distinct_kill_sound = ModPrefs.GetBool("MP_DISTINCT_KILL_SOUND", false);
             }
             else // for compatibility with old olmod, no need to add new settings
             {
@@ -352,7 +356,7 @@ namespace GameMod {
             ModPrefs.SetInt("MP_PM_SHIP_LAG_COMPENSATION_SCALE", Menus.mms_ship_lag_compensation_scale);
             ModPrefs.SetInt("MP_PM_SHIP_LAG_COMPENSATION_COLLISION_LIMIT", Menus.mms_lag_compensation_collision_limit);
             ModPrefs.SetInt("MP_LAG_COMPENSATION_PREDICTION_MODE", Menus.mms_lag_compensation_prediction_mode);
-            ModPrefs.SetInt("MP_LAG_COMPENSATION_DAMPING_MODE", Menus.mms_lag_compensation_damping_mode);
+            ModPrefs.SetInt("MP_LAG_COMPENSATION_ROTATION_STRENGTH", Menus.mms_lag_compensation_rotation_strength);
             ModPrefs.SetBool("MP_PM_STICKY_DEATH_SUMMARY", Menus.mms_sticky_death_summary);
             ModPrefs.SetBool("MP_PM_REDUCED_SHIP_EXPLOSIONS", Menus.mms_reduced_ship_explosions);
             ModPrefs.SetInt("MP_PM_DAMAGEEFFECT_ALPHA_MULT", Menus.mms_damageeffect_alpha_mult);
@@ -364,6 +368,7 @@ namespace GameMod {
             ModPrefs.SetBool("MP_PM_TEAM_HEALTH", Menus.mms_team_health);
             ModPrefs.SetBool("MP_PM_SHOWHUDVELOCITY", HUDVelocity.MenuManagerEnabled);
             ModPrefs.SetBool("MP_PM_SHOWFRAMERATE", Menus.mms_show_framerate);
+            ModPrefs.SetBool("MP_PM_SHOW_SCORES", MPScoreboards.ShowScores);
             ModPrefs.SetInt("MP_PM_AUDIO_OCCLUSION_STRENGTH", Menus.mms_audio_occlusion_strength);
             ModPrefs.SetBool("MP_PM_DIRECTIONAL_WARNINGS", Menus.mms_directional_warnings);
             ModPrefs.SetInt("MP_PM_LOADOUT_HOTKEYS2", Menus.mms_loadout_hotkeys);
@@ -395,7 +400,9 @@ namespace GameMod {
             ModPrefs.SetBool("OD_TURNING", MPServerOptimization.ODTurning);
             ModPrefs.SetBool("MOUSE_ROLL_FIX", MPServerOptimization.RollFix);
             ModPrefs.SetBool("MP_CLIENT_PHYSICS", MPServerOptimization.prefEnabled);
+            ModPrefs.SetInt("MP_ROLL_SPEED_LIMIT", MPServerOptimization.RollSpeedLimit);
             ModPrefs.SetInt("GFX_MAXQUEUEDFRAMES", QualitySettings.maxQueuedFrames);
+            ModPrefs.SetBool("MP_DISTINCT_KILL_SOUND", Menus.mms_distinct_kill_sound);
 
             ModPrefs.Flush(filename + "mod");
         }

@@ -51,13 +51,14 @@ namespace GameMod {
             settings.Clear();
             foreach (var x in newSettings)
                 settings.Add(x.Key, x.Value);
-            //Debug.Log("MPTweaks.Set " + (Overload.NetworkManager.IsServer() ? "server" : "conn " + NetworkMatch.m_my_lobby_id) + " new " + newSettings.Join() + " settings " + settings.Join());
+            Debug.Log("MPTweaks.Set " + (Overload.NetworkManager.IsServer() ? "server" : "conn " + NetworkMatch.m_my_lobby_id) + " new " + newSettings.Join() + " settings " + settings.Join()); // CCF - sometimes, these values are blanking. Don't know why. This needs to be investigated and fixed.
             if (NetworkMatch.GetMatchState() == MatchState.PLAYING)
                 Apply();
         }
 
         public static void Reset()
         {
+            Debug.Log("MPTweaks.Reset"); // CCF
             settings.Clear();
         }
 

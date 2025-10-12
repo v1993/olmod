@@ -186,4 +186,20 @@ namespace GameMod
         }
     }
     */
+
+    // makes the kill confirmation sound distinct if you were the one who made the kill
+    [HarmonyPatch(typeof(NetworkMessageManager), "AddKillMessage")]
+    public static class MPSoundExt_NetworkMessageManager_AddKillMessage
+    {
+        public static void Postfix(int killer_connection_id) //, int killed_connection_id) <-- for custom suicide sound later maybe?
+        {
+            if (!Menus.mms_distinct_kill_sound || !GameplayManager.IsMultiplayerActive) { return; }
+
+            if (killer_connection_id == NetworkMatch.m_my_lobby_id)
+            {
+                SFXCueManager.PlayRawSoundEffect2D(SoundEffect.cine_sfx_highlight_1); // played in addition to the regular kill sound if it was you who made the kill
+            }
+        }
+        
+    }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -90,6 +90,8 @@ namespace GameMod.Core {
                 uConsole.RegisterCommand("export-spawns", "Exports spawnpoints from the editor to a .json file in the OLmod directory", new uConsole.DebugCommand(MPSpawnExtensionVis.Export));
             }
 
+            uConsole.RegisterCommand("getval", "Gets the value of a specified variable -- \"getval [static class].[field]\" (classes can be nested to reach instance fields)", new uConsole.DebugCommand(GetVal));
+            
             if (FindArg("-telemetry")) 
                 TelemetryMod.telemetry_enabled = true;
 
@@ -126,6 +128,43 @@ namespace GameMod.Core {
             }
         }
 
+        public static void GetVal()
+        {
+            string input = uConsole.GetString();
+
+            if (input != null && input != "")
+            {
+                string[] substrings = input.Split('.');
+
+                try
+                {
+                    Type type = AccessTools.TypeByName(substrings[0]);
+                    if (type == null) { throw new Exception("Base static class doesn't exist"); }
+                    FieldInfo field;
+                    object val = null;
+
+                    for (int i = 1; i < substrings.Length; i++)
+                    {
+                        field = AccessTools.Field(type, substrings[i]);
+                        if (field != null)
+                        {
+                            val = field.GetValue(val);
+                            type = field.FieldType;
+                        }
+                        else
+                        {
+                            throw new Exception("Unable to fetch specified field value (named wrong? spelling error? doesn't exist?)");
+                        }
+                    }
+                    Debug.Log("GetVal: Field value is: " + val);
+                } catch (Exception e) { Debug.Log("GetVal: Error checking value - " + e); }
+            }
+            else
+            {
+                Debug.Log("GetVal syntax is \"getval [static class].[field]\" (classes can be nested to reach instance fields)");
+            }
+        }
+        
         public static bool FindArg(string arg)
         {
             return Array.IndexOf<string>(Environment.GetCommandLineArgs(), arg) >= 0;

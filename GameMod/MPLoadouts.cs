@@ -127,10 +127,11 @@ namespace GameMod
                 mode = "DISABLED IN LOADOUTS:";
                 return GetDefaultItems(filter, false, (WeaponType)0, DefaultWeaponEnd, (MissileType)0, DefaultMissileEnd);
             }
-            mode = "RESTRICTED LOADOUTS:";
             if (cntAll < 1) {
-                return new List<string>() {"NONE"};
+                mode = "EMPTY LOADOUTS";
+                return new List<string>() {""};
             }
+            mode = "RESTRICTED LOADOUTS:";
             return GetDefaultItems(filter, true, (WeaponType)0, WeaponType.NUM, (MissileType)0, MissileType.NUM);
         }
 

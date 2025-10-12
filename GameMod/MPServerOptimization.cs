@@ -65,11 +65,17 @@ namespace GameMod
 		public static bool prefEnabled = true; // the toggle used by the menus - sent to the server on match creation and saved in player settings, but otherwise not used
 		public static bool enabled = true; // The toggle used in-match to determine whether or not to use the client-side physics optimizations
 
-		public static int InputBufferLength = 2; // 3 ticks is stock (50ms), 2 seems universally smooth (33ms), 1 feels great but is very network-sensitive (16.7ms) -- sticking with 2 ticks for now
-		public static float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
+		public const int InputBufferLength = 2; // 3 ticks is stock (50ms), 2 seems universally smooth (33ms), 1 feels great but is very network-sensitive (16.7ms) -- sticking with 2 ticks for now
+		public const float CatchUpFactor = 0.1f; // what percentage of backlogged packets to process in a single frame (minimum of 1 frame processed, if there are any)
+		public const int MissedFramesThreshold = 5; // threshold for number of missed frames for a player before they are forced to skip a frame to allow the buffer to refill
+
+		public static Dictionary<NetworkInstanceId, int> playerRespawnDelay = new Dictionary<NetworkInstanceId, int>(16); // wait 120 ticks after a respawn before allowing interpolation if frames to let the first few player states to get through
 
 		public static bool ODTurning = true; // allows OD to boost turning speed if true
 		public static bool RollFix = false; // allows roll speed to be unaffected by mouse movement if true
+
+		public static int RollSpeedLimit = 7; // 7 is "+4", working down from there. 3 is the neutral position. Menu value.
+		public static int RoundRollSpeedLimit = 7; // the value actually used in the active round.
 
 		public static PlayerEncodedPhysics current;
 		public static PlayerPhysicsMessage message;
@@ -270,11 +276,20 @@ namespace GameMod
 
 			public static int RollFixCheck(int rollSpeed, bool mouseAimed)
 			{
-				if ((GameplayManager.IsDedicatedServer() || !RollFix || !enabled) && mouseAimed) // only way we hit this as a server is if the client doesn't support the server optimizations, thus the roll fix
-				{
-					return 3; // neutral position in the array, = 1f
+				//if ((GameplayManager.IsDedicatedServer() || !RollFix || !enabled) && mouseAimed) // only way we hit this as a server is if the client doesn't support the server optimizations, thus the roll fix
+				//{
+				//	return 3; // neutral position in the array, = 1f
+				//}
+				//return rollSpeed;
+
+				if (GameplayManager.IsDedicatedServer() || !enabled) // this branch will only actually fire on the server at all if the client being simmed doesn't support the server optimizations (or they are turned off)
+                {
+					return (mouseAimed ? 3 : rollSpeed);
 				}
-				return rollSpeed;
+				else
+				{
+					return ((mouseAimed && !RollFix) ? 3 : Math.Min(rollSpeed, RoundRollSpeedLimit));
+				}
 			}
 		}
 
@@ -484,11 +499,54 @@ namespace GameMod
 		[HarmonyPatch(typeof(Server), "ProcessCachedControlsRemote")]
 		public static class MPServerOptimization_ProcessCachedControlsRemote
 		{
-			public static void Prefix(Player player)
+			public static bool Prefix(Player player)
             {
 				player.m_send_updated_state = false; // reset this at the start of the method instead of later in the process
-            }
 
+				if (player.m_InputToProcessOnServer.Count >= InputBufferLength)
+				{
+					player.m_server_input_primed = true;
+				}
+
+				int spawndelay;
+				playerRespawnDelay.TryGetValue(player.netId, out spawndelay);
+
+				if (!player.m_server_input_primed || player.c_player_ship.m_dead || player.c_player_ship.m_dying || player.m_server_tick < 0 || NetworkMatch.m_match_state == MatchState.POSTGAME) // set a delay if dead/respawning/round done and hold it at 120 while in that state
+				{
+					spawndelay = 120;
+					playerRespawnDelay[player.netId] = spawndelay;
+				} // decremented in SendSnapshotsToPlayers in MPNoPositionCompression
+
+				if (player.m_InputToProcessOnServer.Count > 0 && player.m_server_input_primed && player.m_input_deficit < MissedFramesThreshold)
+				{
+					PlayerEncodedInputWithTick playerEncodedInputWithTick = player.m_InputToProcessOnServer.Dequeue();
+					player.m_updated_state.m_tick = playerEncodedInputWithTick.m_tick;
+					player.m_send_updated_state = true;
+					player.ApplyFixedUpdateInputMessage(playerEncodedInputWithTick.m_input);
+					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_WEAPON);
+					OL_Server.SendJustPressedOrJustReleasedMessage(player, CCInput.FIRE_MISSILE);
+					player.c_player_ship.FixedUpdateProcessControls();
+				}
+				else if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead && player.m_server_tick > 0) // input was missing for this frame OR we're at the skip threshold
+				{
+					player.PauseRigidBody();
+					player.m_input_deficit = Mathf.Clamp(++player.m_input_deficit, 0, 60); // reusing this to track missing frames so we can skip when needed to let the buffer refill
+
+					/*
+					if (spawndelay == 0 && player.m_input_deficit > MissedFramesThreshold)
+					{
+						Debug.Log("==CCF MISSED TOO MANY INPUTS for " + player.m_mp_name + " on player tick " + player.m_server_tick + ", skipping this frame intentionally to allow buffer catch-up==");
+					}
+					*/
+
+				}
+				player.ProcessRemotePlayerFiringControlsPost();
+
+				return false;
+			}
+
+			// just going to prefix it -- not worth it
+			/* 
 			public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> codes)
 			{
 				foreach (var code in codes)
@@ -501,6 +559,7 @@ namespace GameMod
 					yield return code;
 				}
 			}
+			*/
 		}
 
 		// Replaces AccelerateInputs completely to change the input buffer length on the server to lower movement latency -- also inserts some missing calls from ProcessCachedControlsRemote that should have been included here as well
@@ -516,9 +575,9 @@ namespace GameMod
 				{
 					if (player != null && !player.m_spectator)
 					{
-						player.m_input_deficit = 60; // moved from MPClientExtrapolation
+						//player.m_input_deficit = 60; // moved from MPClientExtrapolation, but the value is being used now to track if we've missed too many frames and need to skip one to let the buffer refill
 
-						if (player.m_InputToProcessOnServer.Count > InputBufferLength) // controls how far to "catch up" to keep the buffer size low
+						if (player.m_InputToProcessOnServer.Count > InputBufferLength && player.m_input_deficit < MissedFramesThreshold) // controls how far to "catch up" to keep the buffer size low
 						{
 							player.m_num_inputs_to_accelerate = Mathf.Max(1, Mathf.FloorToInt((float)player.m_InputToProcessOnServer.Count * CatchUpFactor));
 						}
@@ -528,10 +587,15 @@ namespace GameMod
 						}
 						if (!player.c_player_ship.m_dying && !player.c_player_ship.m_dead)
 						{
-							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, player.m_input_deficit);
+							//player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, player.m_input_deficit);
+							player.m_num_inputs_to_accelerate = Mathf.Clamp(player.m_num_inputs_to_accelerate, 0, 60); // was hardcoded to 60 at the top of the method anyways, and we can reuse the field
 						}
-						player.m_input_deficit -= player.m_num_inputs_to_accelerate;
-						player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
+						//player.m_input_deficit -= player.m_num_inputs_to_accelerate;
+						//player.m_input_deficit = Mathf.Clamp(player.m_input_deficit, 0, int.MaxValue);
+						if (player.m_input_deficit > MissedFramesThreshold) // Once we hit threshold, hold one more frame before resetting (which will get skipped intentionally)
+						{
+							player.m_input_deficit = 0; // if this triggers, we will have just skipped a frame in ProcessCachedControlsRemote so we need to reset the count
+						}
 						if (player.m_num_inputs_to_accelerate > num)
 						{
 							num = player.m_num_inputs_to_accelerate;
