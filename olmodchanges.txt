@@ -1,3 +1,16 @@
+v0.5.14 - 2025-10-18
+
+- Adds a client-side physics mode that skips control replay on the server to minimize the effects of network conditions on ship handling. Also cleans up several points where client/server desync was possible in the right circumstances. (Fireball)
+- Reduces the server-side ship state buffers from 3 frames to 2 to mitigate some of the invisible movement delay it causes. (Fireball)
+- Adds a loadout weapon filter in the round options (derhass)
+- Optional fix for a longstanding bug from stock that caused the joy/key rollspeed modifier not to apply if the mouse was moving. (Fireball)
+- Fixes for extreme widescreen setups, VR log garbage, and audio taunt exceptions. (luponix)
+- Optional toggle for the Overdrive powerup's turn boost. (Fireball)
+- Option to hide score numbers (but not names) from the scoreboard. (Fireball)
+- Optional motion sim telemetry output. (luponix / fresh_ch / drowhunter)
+- Optional unique kill sound for your own kills. (Fireball)
+- Additional lag compensation modes that allow the predictions to take rotation into account in various ways. (Fireball)
+
 v0.5.13 - 2024-03-31
 
 - Rewrote the projdata reader that was handling Cyclone spinup. Linux line endings were still breaking it. (derhass/Fireball)

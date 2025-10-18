@@ -1,4 +1,4 @@
-olmod 0.5.13 - Overload mod
+olmod 0.5.14 - Overload mod
 Community mods for Overload
 https://github.com/overload-development-community/olmod
 
@@ -210,6 +210,24 @@ What does it do
 - Configurable cyclone spinup time, by roncli.
 
 - Spawnpoint injection, by Fireball. See https://github.com/overload-development-community/olmod/wiki/Spawnpoint-Injection for details.
+
+- Export UDP Telemetry, by luponix. Add localized sway, surge, & heave, and angular velocity by fresh_ch. Improve EulerAngle calculation by drowhunter.
+
+- Client-side physics mode for reducing network influence on ship mechanics, by Fireball.
+
+- Reduced delay of ship position processing on the server due to buffering, by Fireball.
+
+- Loadout allowed weapon filters, by derhass.
+
+- New lag compensation ship prediction modes, by Fireball.
+
+- Overdrive rotation boost toggle, as well as an optional fix for roll speed inconsistencies while mouse input is being received, by Fireball.
+
+- Fixes for extreme widescreen setups, log garbage in VR, and audio taunt exceptions, by luponix.
+
+- Optional unique kill sound for your own kills, by Fireball.
+
+- Option to hide score numbers on the scoreboard, by Fireball.
 
 How does it work
 ----------------

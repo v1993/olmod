@@ -287,7 +287,7 @@ namespace GameMod {
         public static int mms_lag_compensation_use_interpolation = 0;
         public static int mms_lag_compensation_collision_limit = 0;
         public static int mms_lag_compensation_prediction_mode = 0;
-        public static int mms_lag_compensation_rotation_strength = 0;
+        public static int mms_lag_compensation_rotation_strength = 2; // default to 50%
         public static string mms_mp_projdata_fn = "STOCK";
         public static bool mms_sticky_death_summary = false;
         public static int mms_damageeffect_alpha_mult = 30;
@@ -886,7 +886,7 @@ namespace GameMod {
                         position.x = -260f;
                         __instance.SelectAndDrawStringOptionItem(Loc.LS("VECTOR PREDICTION"), position, 12, Menus.GetMMSLagCompensationPredictionMode(), Loc.LS("\"VELOCITY\" PROJECTS ONLY THE STRAIGHT-LINE VELOCITY - \"VELOCITY + ROTATION\" PROJECTS THE STRAIGHT-LINE VELOCITY AND CONTINUES ROTATION - \"MOTION ARC\" PARTIALLY ROTATES THE PREDICTED VELOCITY VECTOR AS THE SHIP ROTATES"), 0.9f);
                         position.x = 260f;
-                        __instance.SelectAndDrawStringOptionItem(Loc.LS("ROTATION STRENGTH"), position, 13, Menus.GetMMSLagCompensationRotationStrength(), Loc.LS("HOW STRONGLY ANGULAR MOMENTUM IS APPLIED TO PREDICTIONS (IF AN APPLICABLE MODE IS SELECTED)"), 0.9f);
+                        __instance.SelectAndDrawStringOptionItem(Loc.LS("ROTATION STRENGTH"), position, 13, Menus.GetMMSLagCompensationRotationStrength(), Loc.LS("HOW STRONGLY ANGULAR MOMENTUM IS APPLIED TO PREDICTIONS (IF AN APPLICABLE MODE IS SELECTED)"), 0.9f, (Menus.mms_lag_compensation_prediction_mode == 0));
                         position.x = 0f;
                     }
                     break;
@@ -1298,7 +1298,7 @@ namespace GameMod {
                                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                                         break;
                                     case 13:
-                                        Menus.mms_lag_compensation_rotation_strength = (Menus.mms_lag_compensation_rotation_strength + 5 + UIManager.m_select_dir) % 5;
+                                        Menus.mms_lag_compensation_rotation_strength = (Menus.mms_lag_compensation_rotation_strength + 5 - UIManager.m_select_dir) % 5; // scroll it backwards
                                         MenuManager.PlayCycleSound(1f, (float)UIManager.m_select_dir);
                                         break;
                                 }

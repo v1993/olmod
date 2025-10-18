@@ -1567,7 +1567,7 @@ namespace GameMod
 
         static void Postfix(Projectile __instance)
         {
-            if (GameplayManager.IsMultiplayerActive && Menus.mms_creeper_colors && MenuManager.mms_friendly_fire != 1 && __instance.m_type == ProjPrefab.missile_creeper && __instance.m_owner_player.isLocalPlayer)
+            if (GameplayManager.IsMultiplayerActive && !GameplayManager.IsDedicatedServer() && Menus.mms_creeper_colors && MenuManager.mms_friendly_fire != 1 && __instance.m_type == ProjPrefab.missile_creeper && __instance.m_owner_player.isLocalPlayer)
             {
                 var time = Time.time % cycleTime;
 
